@@ -1,0 +1,140 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+/* Tokens per specs/05-ui-styleguide.md - light theme is the :root default.
+   Theme is switched via [data-theme] on <html>, set before paint by the
+   inline script in layout.tsx to avoid a flash; prefers-color-scheme is
+   the fallback for a first visit with no stored preference. */
+:root {
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  --bg-base: #fafaf9;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --border: #e7e5e4;
+  --border-strong: rgba(15, 17, 25, 0.14);
+  --text-primary: #18181b;
+  --text-secondary: #6b6b70;
+  --text-faint: #9498a3;
+  --accent-primary: #7c5cfc;
+  --accent-primary-hover: #6b4ce0;
+  /* Text-sized uses of the brand accent need a darker shade than the fill
+     color to clear WCAG AA's 4.5:1 for normal text (#7C5CFC on white is only
+     4.38:1) - reuses the existing hover shade, which already passes. */
+  --accent-primary-text: #6b4ce0;
+  /* Secondary/tertiary accents: decorative only (logo mark, gradient CTAs,
+     avatar rings) - never used for body text, so they don't need their own
+     AA-text shade. Kept out of large fills per the styleguide's "used
+     sparingly" rule. */
+  --accent-secondary: #d92a89;
+  --accent-tertiary: #b06600;
+  --accent-success: #16a34a;
+  --accent-danger: #dc2626;
+  --accent-warning: #d97706;
+  --shadow-card: 0 1px 2px rgba(10, 12, 20, 0.04), 0 12px 28px -16px rgba(10, 12, 20, 0.16);
+}
+
+@theme inline {
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-faint: var(--text-faint);
+  --color-accent-primary: var(--accent-primary);
+  --color-accent-primary-hover: var(--accent-primary-hover);
+  --color-accent-primary-text: var(--accent-primary-text);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-tertiary: var(--accent-tertiary);
+  --color-accent-success: var(--accent-success);
+  --color-accent-danger: var(--accent-danger);
+  --color-accent-warning: var(--accent-warning);
+  --font-sans: var(--font-family-sans);
+  --font-display: var(--font-display);
+}
+
+[data-theme="dark"] {
+  --bg-base: #0f0f12;
+  --bg-surface: #18181c;
+  --bg-elevated: #212126;
+  --border: #2a2a30;
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text-primary: #f4f4f5;
+  --text-secondary: #9a9aa2;
+  --text-faint: #6b6b74;
+  --accent-primary: #8b6bff;
+  --accent-primary-hover: #9c7fff;
+  /* Dark theme's base accent-primary already clears 4.5:1 on the dark
+     surface (4.76:1), so the text-safe shade is the same color there. */
+  --accent-primary-text: #8b6bff;
+  --accent-secondary: #ff4fa3;
+  --accent-tertiary: #ffb648;
+  --accent-success: #22c55e;
+  --accent-danger: #ef4444;
+  --accent-warning: #f59e0b;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-base: #0f0f12;
+    --bg-surface: #18181c;
+    --bg-elevated: #212126;
+    --border: #2a2a30;
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --text-primary: #f4f4f5;
+    --text-secondary: #9a9aa2;
+    --text-faint: #6b6b74;
+    --accent-primary: #8b6bff;
+    --accent-primary-hover: #9c7fff;
+    --accent-primary-text: #8b6bff;
+    --accent-secondary: #ff4fa3;
+    --accent-tertiary: #ffb648;
+    --accent-success: #22c55e;
+    --accent-danger: #ef4444;
+    --accent-warning: #f59e0b;
+    color-scheme: dark;
+  }
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+/* Brand gradient - the one place the three accents mix together, reused for
+   the logo mark, primary CTA buttons and avatar rings. Kept out of large
+   surface fills per the styleguide. */
+.brand-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--accent-primary),
+    var(--accent-secondary) 60%,
+    var(--accent-tertiary)
+  );
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

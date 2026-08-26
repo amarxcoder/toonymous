@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Toonymous — Global anonymous, always cartoonized</title>
+<meta name="description" content="Toonymous: a global, fully anonymous social app. Every photo becomes a cartoon before anyone sees it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   1. DESIGN TOKENS
+   The whole visual system lives here. Swap these variables to
+   re-skin the product without touching component CSS below.
+   ============================================================ */
+:root{
+  --font-display:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body:'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:28px; --r-pill:999px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --dur:180ms;
+
+  --accent:#3ddad7;         /* toon-ink cyan — primary brand accent   */
+  --accent-2:#ff4fa3;       /* toon-ink magenta — secondary/live accent */
+  --accent-3:#ffb648;       /* toon-ink amber — warmth / highlights   */
+  --success:#35d08c;
+
+  --sidebar-w:248px;
+  --rail-w:300px;
+  --header-h:64px;
+  --shadow-card:0 1px 2px rgba(10,12,20,.04), 0 12px 28px -16px rgba(10,12,20,.16);
+}
+
+html[data-theme="dark"]{
+  --bg:#08090c;
+  --bg-alt:#0d0f14;
+  --surface:#131620;
+  --surface-2:#1a1e2a;
+  --border:rgba(255,255,255,.08);
+  --border-strong:rgba(255,255,255,.15);
+  --text:#f2f3f6;
+  --text-dim:#9aa0af;
+  --text-faint:#5d6472;
+  --accent-tint:rgba(61,218,215,.13);
+  --scrim:rgba(3,4,6,.7);
+  color-scheme: dark;
+}
+html[data-theme="light"]{
+  --bg:#fafafa;
+  --bg-alt:#f3f3f5;
+  --surface:#ffffff;
+  --surface-2:#f4f5f7;
+  --border:rgba(15,17,25,.09);
+  --border-strong:rgba(15,17,25,.16);
+  --text:#14161c;
+  --text-dim:#5c6270;
+  --text-faint:#9498a3;
+  --accent:#0b9b96;
+  --accent-2:#d92a89;
+  --accent-3:#b06600;
+  --success:#12925f;
+  --accent-tint:rgba(11,155,150,.10);
+  --scrim:rgba(20,22,30,.4);
+  color-scheme: light;
+}
+
+/* ============================================================
+   2. RESET + BASE
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--font-body); -webkit-font-smoothing:antialiased;
+  transition:background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+h1,h2,h3,.font-display{ font-family:var(--font-display); letter-spacing:-.015em; margin:0; }
+p{margin:0;}
+a{color:inherit; text-decoration:none;}
+button{font:inherit; color:inherit;}
+img,svg{display:block;}
+::selection{ background:var(--accent); color:#04201f; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:6px; }
+.icon{ width:1em; height:1em; display:inline-block; }
+
+/* ============================================================
+   3. APP SHELL
+   ============================================================ */
+.shell{ display:grid; grid-template-columns: var(--sidebar-w) 1fr; min-height:100vh; }
+
+/* ---- Sidebar (Instagram / Facebook style: icon + label nav) ---- */
+.sidebar{
+  border-right:1px solid var(--border); background:var(--bg);
+  padding:24px 14px; display:flex; flex-direction:column; gap:4px;
+  position:sticky; top:0; height:100vh;
+}
+.logo{ display:flex; align-items:center; gap:10px; padding:6px 10px 28px; }
+.logo-mark{
+  width:34px; height:34px; border-radius:10px; flex:none;
+  background:conic-gradient(from 220deg, var(--accent), var(--accent-2) 50%, var(--accent-3) 85%, var(--accent));
+  display:flex; align-items:center; justify-content:center; position:relative;
+}
+.logo-mark svg{ width:16px; height:16px; color:#04141c; position:relative; z-index:1; }
+.logo-word{ font-family:var(--font-display); font-weight:700; font-size:19px; }
+.logo-word b{ color:var(--accent); font-weight:700; }
+
+.nav{ display:flex; flex-direction:column; gap:2px; }
+.nav a{
+  display:flex; align-items:center; gap:14px; padding:11px 12px; border-radius:var(--r-md);
+  color:var(--text-dim); font-weight:500; font-size:15px; transition:background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.nav a .icon{ width:22px; height:22px; }
+.nav a:hover{ background:var(--surface); color:var(--text); }
+.nav a.active{ color:var(--text); font-weight:700; }
+.nav a.active .icon{ color:var(--accent); }
+
+.create-btn{
+  margin:18px 6px 8px; display:flex; align-items:center; justify-content:center; gap:9px;
+  padding:12px; border-radius:var(--r-pill); border:none; cursor:pointer;
+  background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #000));
+  color:#04201f; font-weight:700; font-size:14.5px;
+  transition:transform var(--dur) var(--ease), filter var(--dur) var(--ease);
+}
+.create-btn:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+.create-btn .icon{ width:18px; height:18px; }
+
+.sidebar-spacer{ flex:1; }
+
+.theme-toggle{
+  display:flex; align-items:center; gap:2px; padding:3px; border-radius:var(--r-pill);
+  background:var(--surface); border:1px solid var(--border); position:relative; margin:0 6px 10px; width:fit-content;
+}
+.theme-toggle button{
+  border:none; background:none; width:30px; height:30px; border-radius:99px; display:flex; align-items:center; justify-content:center;
+  color:var(--text-faint); cursor:pointer; position:relative; z-index:1; transition:color var(--dur) var(--ease);
+}
+.theme-toggle button.on{ color:#04201f; }
+.theme-toggle button svg{ width:14px; height:14px; }
+.theme-toggle .knob{
+  position:absolute; top:3px; left:3px; width:30px; height:30px; border-radius:99px;
+  background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #000));
+  transition:transform var(--dur) var(--ease);
+}
+html[data-theme="light"] .theme-toggle .knob{ transform:translateX(30px); }
+
+.you-chip{ display:flex; align-items:center; gap:10px; padding:9px; border-radius:var(--r-md); border:1px solid var(--border); background:var(--surface); margin:0 6px; }
+.you-chip .avatar{ width:34px; height:34px; border-radius:10px; overflow:hidden; flex:none; }
+.you-chip .avatar svg{ width:100%; height:100%; }
+.you-chip strong{ font-family:var(--font-mono); font-size:12.5px; display:block; }
+.you-chip span{ font-size:11px; color:var(--text-faint); }
+
+/* ---- Mobile top bar ---- */
+.topbar{ display:none; }
+
+/* ---- Content grid ---- */
+.content{ display:grid; grid-template-columns: minmax(0,1fr) var(--rail-w); }
+.feed-wrap{ max-width:600px; width:100%; margin:0 auto; padding:28px 20px 90px; }
+
+/* ---- Feed tabs (Threads style: quiet text tabs, no chrome) ---- */
+.feed-tabs{ display:flex; gap:22px; border-bottom:1px solid var(--border); margin-bottom:22px; }
+.feed-tabs button{
+  border:none; background:none; padding:0 2px 13px; font-size:14.5px; font-weight:600; color:var(--text-faint);
+  cursor:pointer; position:relative; transition:color var(--dur) var(--ease);
+}
+.feed-tabs button.active{ color:var(--text); }
+.feed-tabs button.active::after{ content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--text); border-radius:2px; }
+.feed-tabs .lock{ margin-left:auto; display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-faint); font-weight:500; cursor:default; }
+.feed-tabs .lock svg{ width:12px; height:12px; }
+
+/* ---- Stories / highlights row (Instagram signature) ---- */
+.stories{ display:flex; gap:16px; overflow-x:auto; padding:2px 2px 26px; scrollbar-width:none; }
+.stories::-webkit-scrollbar{ display:none; }
+.story{ display:flex; flex-direction:column; align-items:center; gap:7px; flex:none; cursor:pointer; }
+.story-ring{
+  width:60px; height:60px; border-radius:50%; padding:2.5px;
+  background:conic-gradient(from 210deg, var(--accent), var(--accent-2) 55%, var(--accent-3) 85%, var(--accent));
+}
+.story-ring .inner{ width:100%; height:100%; border-radius:50%; padding:2.5px; background:var(--bg); }
+.story-ring .inner svg{ width:100%; height:100%; border-radius:50%; }
+.story span{ font-size:11px; color:var(--text-dim); font-family:var(--font-mono); }
+.story.you .story-ring{ background:var(--border-strong); }
+.story.you .story-ring .inner{ display:flex; align-items:center; justify-content:center; background:var(--surface); }
+.story.you .story-ring .inner svg.plus{ width:20px; height:20px; color:var(--text-dim); }
+
+/* ---- Post card ---- */
+.post{ margin-bottom:26px; }
+.post-head{ display:flex; align-items:center; gap:11px; padding:2px 2px 12px; }
+.post-head .avatar{ width:38px; height:38px; border-radius:50%; overflow:hidden; flex:none; border:1px solid var(--border); }
+.post-head .avatar svg{ width:100%; height:100%; }
+.post-head-text{ min-width:0; flex:1; }
+.post-handle{ font-family:var(--font-mono); font-size:13.5px; font-weight:600; }
+.post-sub{ font-size:11.5px; color:var(--text-faint); margin-top:1px; display:flex; align-items:center; gap:6px; }
+.post-sub .badge{ display:inline-flex; align-items:center; gap:4px; color:var(--success); font-weight:600; }
+.post-sub .badge svg{ width:10px; height:10px; }
+.post-more{ width:32px; height:32px; border-radius:99px; border:none; background:none; color:var(--text-faint); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.post-more:hover{ background:var(--surface); color:var(--text); }
+.post-more svg{ width:18px; height:18px; }
+
+.post-media{ border-radius:var(--r-lg); overflow:hidden; aspect-ratio:1/1; background:var(--surface-2); position:relative; }
+.post-media svg{ width:100%; height:100%; }
+
+.post-actions{ display:flex; align-items:center; gap:2px; padding:12px 2px 4px; }
+.post-actions button{ border:none; background:none; width:38px; height:38px; border-radius:99px; display:flex; align-items:center; justify-content:center; color:var(--text); cursor:pointer; transition:transform var(--dur) var(--ease), background var(--dur) var(--ease); }
+.post-actions button:hover{ background:var(--surface); }
+.post-actions button:active{ transform:scale(.88); }
+.post-actions button svg{ width:23px; height:23px; }
+.post-actions button.like.liked svg{ color:var(--accent-2); fill:var(--accent-2); }
+.post-actions .spacer{ flex:1; }
+
+.post-likes{ padding:2px 2px 6px; font-size:13.5px; font-weight:700; }
+.post-caption{ padding:0 2px 4px; font-size:13.8px; line-height:1.5; }
+.post-caption b{ font-family:var(--font-mono); font-weight:600; margin-right:6px; }
+.post-viewcomments{ padding:4px 2px; font-size:13px; color:var(--text-faint); cursor:pointer; }
+.post-viewcomments:hover{ color:var(--text-dim); }
+.post-time{ padding:6px 2px 0; font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.03em; }
+
+/* ---- Right rail ---- */
+.rail{ padding:28px 24px 40px 8px; position:sticky; top:0; height:100vh; overflow-y:auto; }
+.rail-you{ display:flex; align-items:center; gap:12px; padding:4px 4px 22px; }
+.rail-you .avatar{ width:44px; height:44px; border-radius:50%; overflow:hidden; }
+.rail-you .avatar svg{ width:100%; height:100%; }
+.rail-you strong{ font-family:var(--font-mono); font-size:14px; display:block; }
+.rail-you span{ font-size:12px; color:var(--text-faint); }
+.rail-you a{ margin-left:auto; font-size:12.5px; font-weight:700; color:var(--accent); }
+
+.rail-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:18px; margin-bottom:16px; }
+.rail-card h3{ font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); font-weight:700; margin-bottom:14px; }
+.rail-stat{ display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; border-bottom:1px solid var(--border); }
+.rail-stat:last-child{ border:none; }
+.rail-stat span:first-child{ font-size:12.8px; color:var(--text-dim); }
+.rail-stat span:last-child{ font-family:var(--font-mono); font-weight:600; font-size:14px; }
+
+.pillar{ display:flex; gap:11px; align-items:flex-start; padding:8px 0; }
+.pillar .dot{ width:7px; height:7px; border-radius:99px; background:var(--accent); margin-top:6px; flex:none; }
+.pillar strong{ font-size:12.8px; display:block; }
+.pillar span{ font-size:11.8px; color:var(--text-faint); line-height:1.45; }
+
+.rail-footer{ font-size:11.5px; color:var(--text-faint); padding:8px 4px; line-height:2; }
+.rail-footer a{ margin-right:12px; }
+.rail-footer a:hover{ color:var(--text-dim); }
+
+/* ---- Mobile bottom tab bar (Instagram / TikTok / Threads) ---- */
+.tabbar{ display:none; }
+
+/* ---- Compose modal ---- */
+.scrim{ position:fixed; inset:0; background:var(--scrim); backdrop-filter:blur(3px); z-index:80; opacity:0; pointer-events:none; transition:opacity var(--dur) var(--ease); }
+.scrim.open{ opacity:1; pointer-events:auto; }
+.modal{
+  position:fixed; z-index:90; left:50%; top:50%; transform:translate(-50%,-48%) scale(.97); width:min(92vw,480px);
+  background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--r-xl); box-shadow:var(--shadow-card);
+  opacity:0; pointer-events:none; transition:opacity var(--dur) var(--ease), transform var(--dur) var(--ease);
+  max-height:86vh; overflow:hidden; display:flex; flex-direction:column;
+}
+.modal.open{ opacity:1; pointer-events:auto; transform:translate(-50%,-50%) scale(1); }
+.modal-head{ display:flex; align-items:center; padding:18px 20px; border-bottom:1px solid var(--border); }
+.modal-head h2{ font-size:16px; flex:1; text-align:center; }
+.modal-close{ width:30px; height:30px; border-radius:99px; border:none; background:var(--surface-2); color:var(--text-dim); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.modal-close svg{ width:15px; height:15px; }
+.modal-body{ padding:20px; overflow-y:auto; }
+.dropzone{
+  border:1.5px dashed var(--border-strong); border-radius:var(--r-lg); padding:40px 20px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:10px; cursor:pointer; transition:border-color var(--dur), background var(--dur);
+}
+.dropzone:hover{ border-color:var(--accent); background:var(--accent-tint); }
+.dropzone .ic{ width:50px; height:50px; border-radius:16px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; }
+.dropzone .ic svg{ width:23px; height:23px; color:var(--accent); }
+.dropzone strong{ font-size:14px; }
+.dropzone span{ font-size:12px; color:var(--text-faint); }
+.compose-note{ display:flex; gap:9px; margin-top:16px; padding:12px 13px; border-radius:var(--r-md); background:var(--accent-tint); font-size:12px; color:var(--text-dim); line-height:1.5; }
+.compose-note svg{ width:15px; height:15px; color:var(--accent); flex:none; margin-top:1px; }
+textarea.field{ width:100%; margin-top:16px; background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:var(--r-md); padding:12px 13px; font:inherit; font-size:13.5px; resize:vertical; }
+textarea.field:focus{ border-color:var(--accent); }
+.modal-foot{ padding:16px 20px; border-top:1px solid var(--border); }
+
+.btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px; border-radius:var(--r-pill); font-weight:700; font-size:14px; border:none; cursor:pointer; background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #000)); color:#04201f; transition:filter var(--dur) var(--ease); }
+.btn:hover{ filter:brightness(1.05); }
+
+/* ============================================================
+   4. TOON AVATAR PRIMITIVES (fallback static ring colors used by JS-built SVGs)
+   ============================================================ */
+
+/* ============================================================
+   5. RESPONSIVE
+   ============================================================ */
+@media (max-width: 1180px){
+  .content{ grid-template-columns: minmax(0,1fr); }
+  .rail{ display:none; }
+}
+@media (max-width: 900px){
+  .shell{ grid-template-columns: 1fr; }
+  .sidebar{ position:fixed; z-index:70; left:0; top:0; width:260px; transform:translateX(-100%); transition:transform var(--dur) var(--ease); box-shadow:0 20px 50px -20px rgba(0,0,0,.5); }
+  .sidebar.open{ transform:translateX(0); }
+  .topbar{
+    display:flex; align-items:center; gap:14px; height:var(--header-h); padding:0 16px; position:sticky; top:0; z-index:40;
+    background:color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter:blur(12px); border-bottom:1px solid var(--border);
+  }
+  .topbar .logo{ padding:0; flex:1; }
+  .topbar button.icon-btn{ width:38px; height:38px; border-radius:99px; border:1px solid var(--border); background:var(--surface); color:var(--text-dim); display:flex; align-items:center; justify-content:center; }
+  .topbar button.icon-btn svg{ width:18px; height:18px; }
+  .feed-wrap{ padding:20px 14px 90px; }
+  .tabbar{
+    display:flex; justify-content:space-around; position:fixed; bottom:0; left:0; right:0; z-index:60;
+    background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(14px); border-top:1px solid var(--border);
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  }
+  .tabbar a, .tabbar button{ border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-faint); padding:6px 12px; }
+  .tabbar a.active{ color:var(--text); }
+  .tabbar svg{ width:23px; height:23px; }
+}
+@media (max-width: 480px){
+  .post-media{ border-radius:var(--r-md); }
+  .rail-you a{ display:none; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ transition-duration:.001ms !important; animation-duration:.001ms !important; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 8.5-2 5-5 2 2-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-plus-square" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.2s-7.6-4.6-9.8-9A5.2 5.2 0 0 1 12 6.4a5.2 5.2 0 0 1 9.8 4.8c-2.2 4.4-9.8 9-9.8 9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4.5 20c1-4 3.8-6 7.5-6s6.5 2 7.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.6v2.3M12 19.1v2.3M4.7 4.7l1.6 1.6M17.7 17.7l1.6 1.6M2.6 12h2.3M19.1 12h2.3M4.7 19.3l1.6-1.6M17.7 6.3l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.2 14.1A8.4 8.4 0 1 1 9.9 3.8a6.9 6.9 0 0 0 10.3 10.3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-comment" viewBox="0 0 24 24"><path d="M21 12.3a7.7 7.7 0 0 1-8 7.7c-1.2 0-2.3-.2-3.3-.7L3 21l1.5-4.3A7.6 7.6 0 0 1 3 12.3 7.7 7.7 0 0 1 11 4.6h1.3A7.7 7.7 0 0 1 21 12.3Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12.5 20 4l-5.5 16-3-7-7-.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-6-4-6 4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 5 6v6c0 5 3 8 7 9 4-1 7-4 7-9V6l-7-2.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="11" width="15" height="9.5" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V7.8a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 5 5L19 7" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</defs>
+</svg>
+
+<div class="shell" id="shell">
+
+  <!-- ================= SIDEBAR (desktop) ================= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-mark"><svg viewBox="0 0 24 24"><use href="#i-user"/></svg></div>
+      <div class="logo-word">toon<b>ymous</b></div>
+    </div>
+
+    <nav class="nav">
+      <a href="#" class="active"><svg class="icon" viewBox="0 0 24 24"><use href="#i-home"/></svg>Home</a>
+      <a href="#"><svg class="icon" viewBox="0 0 24 24"><use href="#i-compass"/></svg>Discover</a>
+      <a href="#" id="openComposeSidebar"><svg class="icon" viewBox="0 0 24 24"><use href="#i-plus-square"/></svg>Create</a>
+      <a href="#"><svg class="icon" viewBox="0 0 24 24"><use href="#i-heart"/></svg>Activity</a>
+      <a href="#"><svg class="icon" viewBox="0 0 24 24"><use href="#i-user"/></svg>Profile</a>
+    </nav>
+
+    <button class="create-btn" id="openComposeBtn">
+      <svg class="icon" viewBox="0 0 24 24"><use href="#i-plus"/></svg> New post
+    </button>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="theme-toggle" id="themeToggle">
+      <div class="knob"></div>
+      <button id="btnDark" class="on" aria-label="Dark theme"><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></button>
+      <button id="btnLight" aria-label="Light theme"><svg viewBox="0 0 24 24"><use href="#i-sun"/></svg></button>
+    </div>
+
+    <div class="you-chip">
+      <div class="avatar" id="youAvatar"></div>
+      <div>
+        <strong>drift-2291</strong>
+        <span>Anonymous session</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MOBILE TOPBAR ================= -->
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24"><use href="#i-menu"/></svg></button>
+    <div class="logo"><div class="logo-mark"><svg viewBox="0 0 24 24"><use href="#i-user"/></svg></div><div class="logo-word">toon<b>ymous</b></div></div>
+    <button class="icon-btn" id="themeBtnMobile" aria-label="Toggle theme"><svg viewBox="0 0 24 24"><use href="#i-moon"/></svg></button>
+  </header>
+  <div class="scrim" id="sidebarScrim"></div>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <div class="content">
+    <main class="feed-wrap">
+
+      <div class="feed-tabs">
+        <button class="active">Latest</button>
+        <button>Shuffled global</button>
+        <div class="lock"><svg viewBox="0 0 24 24"><use href="#i-lock"/></svg>No "for you" feed</div>
+      </div>
+
+      <div class="stories" id="stories"></div>
+
+      <div id="postList"></div>
+
+    </main>
+
+    <!-- ================= RIGHT RAIL ================= -->
+    <aside class="rail">
+      <div class="rail-you">
+        <div class="avatar" id="railAvatar"></div>
+        <div><strong>drift-2291</strong><span>Anonymous session</span></div>
+        <a href="#">Rotate</a>
+      </div>
+
+      <div class="rail-card">
+        <h3>Global pulse</h3>
+        <div class="rail-stat"><span>Cartoonized today</span><span>48,912</span></div>
+        <div class="rail-stat"><span>Active sessions</span><span>128,441</span></div>
+        <div class="rail-stat"><span>Median convert time</span><span>0.9s</span></div>
+      </div>
+
+      <div class="rail-card">
+        <h3>Non-negotiable</h3>
+        <div class="pillar"><span class="dot"></span><div><strong>Always cartoonized</strong><span>No path exists for a real photo to reach storage.</span></div></div>
+        <div class="pillar"><span class="dot"></span><div><strong>No location, ever</strong><span>Nothing is geotagged, ranked, or grouped by region.</span></div></div>
+        <div class="pillar"><span class="dot"></span><div><strong>No algorithm</strong><span>Chronological or shuffled-global — never personalized.</span></div></div>
+      </div>
+
+      <div class="rail-footer">
+        <a href="#">Privacy</a><a href="#">Guidelines</a><a href="#">Status</a>
+        <br><br>Toonymous is a design mock.
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ================= MOBILE TAB BAR ================= -->
+<nav class="tabbar">
+  <a href="#" class="active"><svg viewBox="0 0 24 24"><use href="#i-home"/></svg></a>
+  <a href="#"><svg viewBox="0 0 24 24"><use href="#i-compass"/></svg></a>
+  <button id="openComposeMobile"><svg viewBox="0 0 24 24"><use href="#i-plus-square"/></svg></button>
+  <a href="#"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></a>
+  <a href="#"><svg viewBox="0 0 24 24"><use href="#i-user"/></svg></a>
+</nav>
+
+<!-- ================= COMPOSE MODAL ================= -->
+<div class="scrim" id="composeScrim"></div>
+<div class="modal" id="composeModal" role="dialog" aria-modal="true" aria-labelledby="composeTitle">
+  <div class="modal-head">
+    <h2 id="composeTitle">New post</h2>
+    <button class="modal-close" id="composeClose" aria-label="Close"><svg viewBox="0 0 24 24"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="modal-body">
+    <div class="dropzone">
+      <div class="ic"><svg viewBox="0 0 24 24"><use href="#i-upload"/></svg></div>
+      <strong>Drop a photo, or click to choose one</strong>
+      <span>Converted to a cartoon instantly — the original is never stored.</span>
+    </div>
+    <div class="compose-note">
+      <svg viewBox="0 0 24 24"><use href="#i-shield"/></svg>
+      <div>Your photo is processed only long enough to generate the cartoon. Toonymous never stores, displays, or can recover the original — for you or anyone else.</div>
+    </div>
+    <textarea class="field" rows="3" placeholder="Say something anonymous… (optional)"></textarea>
+  </div>
+  <div class="modal-foot">
+    <button class="btn" id="shareBtn"><svg class="icon" viewBox="0 0 24 24"><use href="#i-check"/></svg>Share to global feed</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   Minimal toon-avatar generator — the product's signature visual.
+   No real photos anywhere in this mock: every "post image" and
+   every avatar is a procedurally generated flat cartoon face.
+   ============================================================ */
+const PALETTES = [
+  ['#3ddad7','#0f2e2d'], ['#ff4fa3','#3a0f22'], ['#ffb648','#3a2506'],
+  ['#8b7bff','#221a3a'], ['#5ad1ff','#0d2430'], ['#ff8a5c','#331a0f'],
+  ['#6fe0a8','#0f2a1c'], ['#f2e26b','#332e0a']
+];
+function hash(str){ let h=0; for(let i=0;i<str.length;i++){ h=(h<<5)-h+str.charCodeAt(i); h|=0; } return Math.abs(h); }
+function rng(seed){ let s=seed%2147483647; if(s<=0) s+=2147483646; return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
+
+function toonFace(seed, size, opts){
+  opts = opts || {};
+  const r = rng(hash(seed));
+  const [fg,bg] = PALETTES[Math.floor(r()*PALETTES.length)];
+  const eyeStyle = Math.floor(r()*3), mouthStyle = Math.floor(r()*3), extra = r();
+  let eyes = eyeStyle===0
+    ? `<circle cx="38" cy="44" r="4.4" fill="${fg}"/><circle cx="62" cy="44" r="4.4" fill="${fg}"/>`
+    : eyeStyle===1
+    ? `<rect x="33" y="41" width="11" height="5" rx="2.5" fill="${fg}"/><rect x="56" y="41" width="11" height="5" rx="2.5" fill="${fg}"/>`
+    : `<path d="M33 44 Q38 38 44 44" stroke="${fg}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M56 44 Q62 38 67 44" stroke="${fg}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  let mouth = mouthStyle===0
+    ? `<path d="M40 62 Q50 70 60 62" stroke="${fg}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`
+    : mouthStyle===1
+    ? `<rect x="42" y="60" width="16" height="5" rx="2.5" fill="${fg}"/>`
+    : `<path d="M41 63 Q50 58 59 63" stroke="${fg}" stroke-width="3.6" fill="none" stroke-linecap="round"/>`;
+  let extraMark = extra > 0.66 ? `<rect x="30" y="39" width="40" height="8" rx="4" fill="${fg}" opacity=".5"/>`
+    : extra > 0.33 ? `<path d="M28 34 Q50 20 72 34" stroke="${fg}" stroke-width="5" fill="none" stroke-linecap="round" opacity=".45"/>` : '';
+  const backdrop = opts.transparent ? '' : `<rect width="100" height="100" fill="${bg}"/>`;
+  const open = opts.fragment ? `<g role="img" aria-label="Anonymous cartoon avatar">` : `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anonymous cartoon avatar">`;
+  const close = opts.fragment ? `</g>` : `</svg>`;
+  return `${open}
+    ${backdrop}
+    <circle cx="50" cy="53" r="30" fill="${fg}" opacity=".14"/>
+    <circle cx="50" cy="53" r="29" fill="none" stroke="${fg}" stroke-width="1.4" opacity=".55"/>
+    ${eyes}${mouth}${extraMark}
+  ${close}`;
+}
+function toonPostImage(seed){
+  const r = rng(hash(seed));
+  const [fg,bg] = PALETTES[Math.floor(r()*PALETTES.length)];
+  const faceSize = 260, tx = (500-faceSize)/2, ty = (500-faceSize)/2, scale = (faceSize/100).toFixed(4);
+  const faceFragment = toonFace(seed, faceSize, {fragment:true, transparent:true});
+  const face = `<g transform="translate(${tx},${ty}) scale(${scale})">${faceFragment}</g>`;
+  return `<svg viewBox="0 0 500 500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <rect width="500" height="500" fill="${bg}"/>
+    <circle cx="90" cy="90" r="70" fill="${fg}" opacity=".10"/>
+    <circle cx="430" cy="410" r="100" fill="${fg}" opacity=".10"/>
+    ${face}
+  </svg>`;
+}
+
+const ADJ = ['nimble','quiet','drift','amber','solar','violet','coral','cedar','ember','vivid'];
+const NOUN = ['willow','harbor','signal','lantern','meadow','current','compass','echo','orbit','tide'];
+function handle(){ return `${ADJ[Math.floor(Math.random()*ADJ.length)]}-${NOUN[Math.floor(Math.random()*NOUN.length)]}-${100+Math.floor(Math.random()*899)}`; }
+
+const CAPTIONS = [
+  "Nobody knows it's me and honestly that's the whole appeal.",
+  "Drew the short straw on Monday. Toon me accordingly.",
+  "Global feed, zero context, exactly how I like it.",
+  "Cartoon version of me is doing better than the original.",
+  "Posting into the void, the void posts back sometimes.",
+  "Somewhere between a passport photo and a comic strip.",
+  "Every timezone, one feed. Still wild that this exists.",
+  "No filter needed when the whole photo gets reinvented."
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  document.getElementById('youAvatar').innerHTML = toonFace('me-drift-2291', 68);
+  document.getElementById('railAvatar').innerHTML = toonFace('me-drift-2291', 68);
+
+  /* ---- Stories row ---- */
+  const stories = document.getElementById('stories');
+  let storiesHtml = `<div class="story you"><div class="story-ring"><div class="inner"><svg class="plus" viewBox="0 0 24 24"><use href="#i-plus"/></svg></div></div><span>You</span></div>`;
+  for(let i=0;i<9;i++){
+    const seed = 'story-'+i+'-'+Math.random();
+    storiesHtml += `<div class="story"><div class="story-ring"><div class="inner">${toonFace(seed,56)}</div></div><span>${handle().split('-')[0]}</span></div>`;
+  }
+  stories.innerHTML = storiesHtml;
+
+  /* ---- Feed ---- */
+  const list = document.getElementById('postList');
+  let feedHtml = '';
+  for(let i=0;i<6;i++){
+    const seed = 'post-'+i+'-'+Math.random();
+    const h = handle();
+    const mins = Math.floor(Math.random()*58)+1;
+    const caption = CAPTIONS[Math.floor(Math.random()*CAPTIONS.length)];
+    const likes = Math.floor(Math.random()*400)+12;
+    feedHtml += `
+    <article class="post">
+      <div class="post-head">
+        <div class="avatar">${toonFace(seed,64)}</div>
+        <div class="post-head-text">
+          <div class="post-handle">${h}</div>
+          <div class="post-sub"><span class="badge"><svg viewBox="0 0 24 24"><use href="#i-check"/></svg>Cartoonized</span> · ${mins}m ago</div>
+        </div>
+        <button class="post-more" aria-label="More"><svg viewBox="0 0 24 24"><use href="#i-more"/></svg></button>
+      </div>
+      <div class="post-media">${toonPostImage(seed)}</div>
+      <div class="post-actions">
+        <button class="like" data-like aria-label="Like"><svg viewBox="0 0 24 24"><use href="#i-heart"/></svg></button>
+        <button aria-label="Comment"><svg viewBox="0 0 24 24"><use href="#i-comment"/></svg></button>
+        <button aria-label="Share"><svg viewBox="0 0 24 24"><use href="#i-share"/></svg></button>
+        <div class="spacer"></div>
+        <button aria-label="Save"><svg viewBox="0 0 24 24"><use href="#i-bookmark"/></svg></button>
+      </div>
+      <div class="post-likes" data-count>${likes} likes</div>
+      <div class="post-caption"><b>${h}</b>${caption}</div>
+      <div class="post-viewcomments">View all comments</div>
+      <div class="post-time">${mins} minutes ago</div>
+    </article>`;
+  }
+  list.innerHTML = feedHtml;
+
+  /* ---- Like toggle (event delegation, minimal state) ---- */
+  list.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-like]');
+    if(!btn) return;
+    const article = btn.closest('.post');
+    const countEl = article.querySelector('[data-count]');
+    const liked = btn.classList.toggle('liked');
+    const n = parseInt(countEl.textContent, 10);
+    countEl.textContent = (liked ? n+1 : n-1) + ' likes';
+  });
+
+  /* ---- Theme toggle ---- */
+  function setTheme(mode){
+    document.documentElement.setAttribute('data-theme', mode);
+    document.getElementById('btnDark').classList.toggle('on', mode==='dark');
+    document.getElementById('btnLight').classList.toggle('on', mode==='light');
+  }
+  document.getElementById('btnDark').addEventListener('click', ()=>setTheme('dark'));
+  document.getElementById('btnLight').addEventListener('click', ()=>setTheme('light'));
+  document.getElementById('themeBtnMobile').addEventListener('click', ()=>{
+    const cur = document.documentElement.getAttribute('data-theme');
+    setTheme(cur==='dark' ? 'light' : 'dark');
+  });
+
+  /* ---- Mobile sidebar drawer ---- */
+  const sidebar = document.getElementById('sidebar');
+  const scrim = document.getElementById('sidebarScrim');
+  document.getElementById('menuBtn').addEventListener('click', ()=>{ sidebar.classList.add('open'); scrim.classList.add('open'); });
+  scrim.addEventListener('click', ()=>{ sidebar.classList.remove('open'); scrim.classList.remove('open'); });
+
+  /* ---- Compose modal ---- */
+  const composeModal = document.getElementById('composeModal');
+  const composeScrim = document.getElementById('composeScrim');
+  function openCompose(){ composeModal.classList.add('open'); composeScrim.classList.add('open'); }
+  function closeCompose(){ composeModal.classList.remove('open'); composeScrim.classList.remove('open'); }
+  document.getElementById('openComposeBtn').addEventListener('click', openCompose);
+  document.getElementById('openComposeSidebar').addEventListener('click', (e)=>{ e.preventDefault(); openCompose(); });
+  document.getElementById('openComposeMobile').addEventListener('click', openCompose);
+  document.getElementById('composeClose').addEventListener('click', closeCompose);
+  composeScrim.addEventListener('click', closeCompose);
+  document.getElementById('shareBtn').addEventListener('click', closeCompose);
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeCompose(); sidebar.classList.remove('open'); scrim.classList.remove('open'); } });
+
+});
+})();
+</script>
+</body>
+</html>

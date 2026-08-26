@@ -1,0 +1,225 @@
+// Data model review (checklist Phase 1): no field here captures real name,
+// precise location, or contact info visible to other users. `email` exists
+// solely as a login credential (F6.1) and is never returned by any API to
+// non-owners.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  user
+  moderator
+  complianceOfficer
+}
+
+model User {
+  id              String         @id @default(uuid())
+  email           String         @unique
+  passwordHash    String
+  handle          String         @unique
+  handleRerolls   Int            @default(0)
+  avatarSeed      String
+  role            UserRole       @default(user)
+  // Abuse handling keys off account/device signals, never identity (F5.4) -
+  // shadow-limit hides a user's posts from the public feed without telling
+  // them; ban blocks login. Neither field is ever exposed to other users.
+  shadowLimited   Boolean        @default(false)
+  bannedAt        DateTime?
+  createdAt       DateTime       @default(now())
+  refreshTokens   RefreshToken[]
+  posts           Post[]
+  comments        Comment[]
+  likes           Like[]
+  reports         Report[]          @relation("ReporterReports")
+  moderationActions ModerationAction[] @relation("ModeratorActions")
+  appeals         Appeal[]
+  blocksMade      Block[]           @relation("BlockerBlocks")
+  blockedBy       Block[]           @relation("BlockedByOthers")
+  following       Follow[]          @relation("FollowerFollows")
+  followedBy      Follow[]          @relation("FollowingFollowers")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// Post: no location field exists (F3.1/pillar). `imageUrl` is only ever a
+// cartoonized output path (F1.1) — nothing here ever references the
+// original upload, which lives only in the short-lived intake dir (F1.3).
+enum PostStatus {
+  pending
+  ready
+  blocked
+  // Set by a moderator resolving a report (F5.2), distinct from `blocked`
+  // (the automated safety pre-check at upload time, F5.1).
+  removed
+  failed
+}
+
+model Post {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caption   String?
+  status    PostStatus @default(pending)
+  imageUrl  String?
+  failureReason String?
+  createdAt DateTime   @default(now())
+  likes     Like[]
+  comments  Comment[]
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  postId    String
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text      String
+  // Soft-removed by a moderator (F5.2) - kept for the audit trail, filtered
+  // out of every reader-facing listing.
+  removedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([postId])
+}
+
+// What got reported - always content, never an account directly (F5.2).
+enum ReportTargetType {
+  post
+  comment
+}
+
+enum ReportStatus {
+  open
+  resolved
+}
+
+model Report {
+  id                String             @id @default(uuid())
+  targetType        ReportTargetType
+  targetId          String
+  reason            String
+  reporterId        String
+  reporter          User               @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  status            ReportStatus       @default(open)
+  createdAt         DateTime           @default(now())
+  resolvedAt        DateTime?
+  moderationActions ModerationAction[]
+
+  @@index([status])
+}
+
+// What a moderator acted on - content (removal) or an account (shadow-limit,
+// ban). Never targets an identity signal, only content/account ids (F5.4).
+enum ActionTargetType {
+  post
+  comment
+  account
+}
+
+enum ModerationActionType {
+  remove_content
+  shadow_limit
+  ban
+  no_action
+  reverse
+}
+
+model ModerationAction {
+  id          String                @id @default(uuid())
+  reportId    String?
+  report      Report?               @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  moderatorId String
+  moderator   User                  @relation("ModeratorActions", fields: [moderatorId], references: [id], onDelete: Cascade)
+  targetType  ActionTargetType
+  targetId    String
+  action      ModerationActionType
+  note        String?
+  createdAt   DateTime              @default(now())
+  appeals     Appeal[]
+}
+
+enum AppealStatus {
+  pending
+  approved
+  denied
+}
+
+// Report/appeal path for moderation decisions, even for anonymous accounts
+// (N6) - one appeal per action, filed by whoever the action targeted.
+model Appeal {
+  id                 String           @id @default(uuid())
+  moderationActionId String           @unique
+  moderationAction   ModerationAction @relation(fields: [moderationActionId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason             String
+  status             AppealStatus     @default(pending)
+  resolvedAt         DateTime?
+  createdAt          DateTime         @default(now())
+}
+
+// Mute/block is per-handle, never identity-based (F4.1) - a blocked user's
+// content is hidden from the blocker's feed/comments.
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blocker   User     @relation("BlockerBlocks", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlockedByOthers", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+// Follow by handle (F4.1) - purely a social-graph edge, never used to alter
+// feed ranking/ordering (F3.2 still governs feed order; this only backs
+// follower counts and a follow/unfollow button).
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  follower    User     @relation("FollowerFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("FollowingFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+// Restricted legal/compliance workflow for CSAM/NSFW matches (F5.1, N6) -
+// deliberately its own table/route, never joined into the general
+// moderation queue. No image bytes are ever stored here or anywhere else
+// for a blocked upload (F1.3) - only the fact that a match occurred.
+model ComplianceFlag {
+  id         String    @id @default(uuid())
+  postId     String?
+  reason     String
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+  reviewedBy String?
+
+  @@index([reviewedAt])
+}

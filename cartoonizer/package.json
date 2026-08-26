@@ -1,0 +1,27 @@
+{
+  "name": "toonymous-cartoonizer",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^4.22.2",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25",
+    "@types/node": "^22.20.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3"
+  }
+}
