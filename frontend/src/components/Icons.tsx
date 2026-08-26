@@ -49,23 +49,6 @@ export function UserIcon(props: IconProps) {
   );
 }
 
-export function SunIcon(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <circle cx="12" cy="12" r="4.3" />
-      <path d="M12 2.6v2.3M12 19.1v2.3M4.7 4.7l1.6 1.6M17.7 17.7l1.6 1.6M2.6 12h2.3M19.1 12h2.3M4.7 19.3l1.6-1.6M17.7 6.3l1.6-1.6" />
-    </svg>
-  );
-}
-
-export function MoonIcon(props: IconProps) {
-  return (
-    <svg {...base} {...props}>
-      <path d="M20.2 14.1A8.4 8.4 0 1 1 9.9 3.8a6.9 6.9 0 0 0 10.3 10.3Z" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export function HeartIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>

@@ -1,10 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
-/* Tokens per specs/05-ui-styleguide.md - light theme is the :root default.
-   Theme is switched via [data-theme] on <html>, set before paint by the
-   inline script in layout.tsx to avoid a flash; prefers-color-scheme is
-   the fallback for a first visit with no stored preference. */
+/* Tokens per specs/05-ui-styleguide.md - light-only, 4 selectable accent
+   themes. bg/border/text stay identical across themes (layout and contrast
+   are theme-independent); only the accent trio + gradient differ. Theme is
+   switched via [data-theme] on <html>, set before paint by the inline
+   script in layout.tsx to avoid a flash. "violet" is the :root default. */
 :root {
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 
@@ -34,6 +35,33 @@
   --shadow-card: 0 1px 2px rgba(10, 12, 20, 0.04), 0 12px 28px -16px rgba(10, 12, 20, 0.16);
 }
 
+/* Sunset: coral/pink/amber. */
+[data-theme="sunset"] {
+  --accent-primary: #fb5607;
+  --accent-primary-hover: #c2410c;
+  --accent-primary-text: #9a3412;
+  --accent-secondary: #ff006e;
+  --accent-tertiary: #ffbe0b;
+}
+
+/* Ocean: sky blue/cyan/indigo. */
+[data-theme="ocean"] {
+  --accent-primary: #3a86ff;
+  --accent-primary-hover: #1d4ed8;
+  --accent-primary-text: #1d4ed8;
+  --accent-secondary: #00b4d8;
+  --accent-tertiary: #8338ec;
+}
+
+/* Mint: spring green/yellow/teal. */
+[data-theme="mint"] {
+  --accent-primary: #06d6a0;
+  --accent-primary-hover: #047857;
+  --accent-primary-text: #047857;
+  --accent-secondary: #ffd60a;
+  --accent-tertiary: #118ab2;
+}
+
 @theme inline {
   --color-bg-base: var(--bg-base);
   --color-bg-surface: var(--bg-surface);
@@ -53,50 +81,6 @@
   --color-accent-warning: var(--accent-warning);
   --font-sans: var(--font-family-sans);
   --font-display: var(--font-display);
-}
-
-[data-theme="dark"] {
-  --bg-base: #0f0f12;
-  --bg-surface: #18181c;
-  --bg-elevated: #212126;
-  --border: #2a2a30;
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --text-primary: #f4f4f5;
-  --text-secondary: #9a9aa2;
-  --text-faint: #6b6b74;
-  --accent-primary: #8b6bff;
-  --accent-primary-hover: #9c7fff;
-  /* Dark theme's base accent-primary already clears 4.5:1 on the dark
-     surface (4.76:1), so the text-safe shade is the same color there. */
-  --accent-primary-text: #8b6bff;
-  --accent-secondary: #ff4fa3;
-  --accent-tertiary: #ffb648;
-  --accent-success: #22c55e;
-  --accent-danger: #ef4444;
-  --accent-warning: #f59e0b;
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg-base: #0f0f12;
-    --bg-surface: #18181c;
-    --bg-elevated: #212126;
-    --border: #2a2a30;
-    --border-strong: rgba(255, 255, 255, 0.14);
-    --text-primary: #f4f4f5;
-    --text-secondary: #9a9aa2;
-    --text-faint: #6b6b74;
-    --accent-primary: #8b6bff;
-    --accent-primary-hover: #9c7fff;
-    --accent-primary-text: #8b6bff;
-    --accent-secondary: #ff4fa3;
-    --accent-tertiary: #ffb648;
-    --accent-success: #22c55e;
-    --accent-danger: #ef4444;
-    --accent-warning: #f59e0b;
-    color-scheme: dark;
-  }
 }
 
 body {

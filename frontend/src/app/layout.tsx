@@ -18,8 +18,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <head>
         {/* Sets data-theme before first paint so there's no flash of the
-            wrong palette (05-ui-styleguide.md requires both themes to be
-            first-class, not light-only with dark bolted on). */}
+            wrong accent palette (see THEME_INIT_SCRIPT in ThemeContext.tsx). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-bg-base text-text-primary">

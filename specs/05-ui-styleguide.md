@@ -20,23 +20,32 @@ N5 (accessibility baseline: WCAG 2.1 AA).
 
 ## Color system
 
-Two themes, dark and light, both first-class (not light-only with a dark mode bolted on).
+Light-only. Four selectable accent themes (Violet default, Sunset, Ocean, Mint) rather than a
+light/dark split — `--bg-base`/`--bg-surface`/`--border`/`--text-*` are identical across all four,
+only the accent trio + `.brand-gradient` change, so switching themes is a personalization choice,
+not a color-scheme mode.
 
-| Token | Light | Dark | Usage |
-|---|---|---|---|
-| `--bg-base` | `#FAFAF9` | `#0F0F12` | App background |
-| `--bg-surface` | `#FFFFFF` | `#18181C` | Cards, post containers |
-| `--bg-elevated` | `#FFFFFF` (shadow) | `#212126` | Modals, popovers |
-| `--border` | `#E7E5E4` | `#2A2A30` | Dividers, card borders |
-| `--text-primary` | `#18181B` | `#F4F4F5` | Primary text |
-| `--text-secondary` | `#6B6B70` | `#9A9AA2` | Timestamps, meta |
-| `--accent-primary` | `#7C5CFC` | `#8B6BFF` | Primary brand accent (buttons, links, active states) — a violet chosen to feel modern/creative without leaning "corporate blue" |
-| `--accent-primary-hover` | `#6B4CE0` | `#9C7FFF` | Hover/active state of accent |
-| `--accent-success` | `#16A34A` | `#22C55E` | Success states |
-| `--accent-danger` | `#DC2626` | `#EF4444` | Destructive actions, moderation warnings |
-| `--accent-warning` | `#D97706` | `#F59E0B` | Report/flag states |
-| `--accent-secondary` | `#D92A89` | `#FF4FA3` | Decorative only - logo mark, brand gradient, avatar ring. Never body text or a large fill. |
-| `--accent-tertiary` | `#B06600` | `#FFB648` | Decorative only, same rule as `--accent-secondary` - the third stop in the brand gradient. |
+| Token | Value | Usage |
+|---|---|---|
+| `--bg-base` | `#FAFAF9` | App background |
+| `--bg-surface` | `#FFFFFF` | Cards, post containers |
+| `--bg-elevated` | `#FFFFFF` (shadow) | Modals, popovers |
+| `--border` | `#E7E5E4` | Dividers, card borders |
+| `--text-primary` | `#18181B` | Primary text |
+| `--text-secondary` | `#6B6B70` | Timestamps, meta |
+| `--accent-success` | `#16A34A` | Success states |
+| `--accent-danger` | `#DC2626` | Destructive actions, moderation warnings |
+| `--accent-warning` | `#D97706` | Report/flag states |
+
+Per-theme accent trio (each is `--accent-primary` / `--accent-primary-hover` = `--accent-primary-text`
+/ `--accent-secondary` / `--accent-tertiary`):
+
+| Theme | Primary | Hover/text shade | Secondary | Tertiary |
+|---|---|---|---|---|
+| Violet (default) | `#7C5CFC` | `#6B4CE0` | `#D92A89` | `#B06600` |
+| Sunset | `#FB5607` | `#9A3412` | `#FF006E` | `#FFBE0B` |
+| Ocean | `#3A86FF` | `#1D4ED8` | `#00B4D8` | `#8338EC` |
+| Mint | `#06D6A0` | `#047857` | `#FFD60A` | `#118AB2` |
 
 Rules:
 - No pure black (`#000`) or pure white (`#FFF`) as a large fill — use the tokens above for softer
@@ -47,7 +56,9 @@ Rules:
   in a few fixed spots (the `.brand-gradient` mix of all three accents: logo mark, primary buttons,
   avatar ring, active nav icon) - they are never used for text or as a standalone large fill, so they
   don't need their own AA-text shade the way `--accent-primary-text` does.
-- Both themes must independently pass WCAG AA contrast (4.5:1 body text, 3:1 large text/icons).
+- Every theme's `--accent-primary-hover`/`--accent-primary-text` shade must independently pass WCAG
+  AA contrast on `--bg-surface` (4.5:1 body text, 3:1 large text/icons) — adding a fifth theme means
+  picking a text-safe shade of its primary hue, not reusing another theme's.
 
 ## Typography
 
@@ -96,9 +107,8 @@ Rules:
   and the sidebar "you" chip, wrap it in a 1.5px `.brand-gradient` ring instead of a plain border —
   the one place per screen the full gradient identity shows up beyond the primary button.
 - **Cards:** `--bg-surface` background, 1px `--border`, 16px corner radius (post cards, profile
-  card), subtle shadow (`--shadow-card`) in both themes now that it's a soft diffused shadow rather
-  than a hard one — verify it still reads clean, not muddy, before reusing this shadow value anywhere
-  new in dark theme.
+  card), subtle diffused shadow (`--shadow-card`) — same value across all four themes since
+  `--bg-surface` doesn't change.
 - **Post card overflow menu:** Report and Block live behind a "more" (⋯) icon button on the post
   header, not as inline text buttons in the action row — keeps the primary row to just Like/Comment
   plus a visible Follow. Any icon-only button (the ⋯ menu, Like, Comment) needs an `aria-label`.
@@ -106,10 +116,11 @@ Rules:
   reinforcing the always-cartoonized pillar. This is always literally true for anything reaching the
   feed, so it's safe as a permanent trust cue — never add a similar badge for anything that isn't
   unconditionally true (no fake "verified"/"trending" badges, ever).
-- **Theme toggle:** a manual sun/moon pill toggle (sidebar on desktop, top bar on mobile), not just
-  `prefers-color-scheme`. Defaults to system preference on first visit, persists an explicit choice
-  in `localStorage`, and is applied via `data-theme` on `<html>` (set before first paint by an inline
-  script) so both themes stay first-class per the design principles above.
+- **Theme picker:** four gradient swatch buttons (sidebar on desktop, top bar on mobile) — Violet,
+  Sunset, Ocean, Mint. Defaults to Violet on first visit, persists an explicit choice in
+  `localStorage`, applied via `data-theme` on `<html>` (set before first paint by an inline script,
+  `THEME_INIT_SCRIPT` in `ThemeContext.tsx`) so there's no flash of the wrong accent. Light-only by
+  design — no dark mode.
 - **Toasts/inline errors:** never use a raw `alert()`; all feedback (e.g. "post scrubbed for
   personal info, please rephrase") is inline, calm, and actionable — this app will surface privacy
   filter interventions relatively often, so this messaging must feel protective, not punitive.
