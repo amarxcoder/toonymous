@@ -1,0 +1,51 @@
+# Render Blueprint for the free-tier client-demo deploy. Render's free plan
+# only supports Web Services (no free Background Workers or Private
+# Services), so the backend API + BullMQ worker run combined in one service
+# (see backend/package.json's "start:render"), and the cartoonizer — meant to
+# be internal-only per specs/04-conventions.md — runs as its own web service
+# guarded by a shared secret instead. This is a demo-hosting adaptation, not
+# a change to the project's real bare-VPS deploy convention.
+services:
+  - type: web
+    name: toonymous-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build && npx prisma migrate deploy
+    startCommand: npm run start:render
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: CARTOONIZER_URL
+        sync: false
+      - key: CARTOONIZER_SHARED_SECRET
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: cartoons
+      - key: NODE_ENV
+        value: production
+
+  - type: web
+    name: toonymous-cartoonizer
+    runtime: node
+    plan: free
+    rootDir: cartoonizer
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: CARTOONIZER_SHARED_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production

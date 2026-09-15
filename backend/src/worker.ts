@@ -4,10 +4,9 @@ import { Worker } from "bullmq";
 import { logger } from "./lib/logger";
 import { prisma } from "./lib/prisma";
 import { CartoonizeJobData, redisConnection } from "./lib/queue";
-import { cartoonPath, deleteIfExists, intakePath } from "./lib/storage";
+import { deleteIfExists, intakePath, saveCartoon } from "./lib/storage";
 
-const CARTOONIZER_URL = process.env.CARTOONIZER_URL ?? "http://127.0.0.1:3082";
-const BACKEND_ORIGIN = process.env.BACKEND_ORIGIN ?? "http://localhost:3081";
+const CARTOONIZER_URL = process.env.CARTOONIZER_URL ?? "http://127.0.0.1:4002";
 
 // F1.3: the intake file is deleted here on every path (success or failure) —
 // there is no retry path that leaves an original image sitting on disk.
@@ -22,7 +21,12 @@ const worker = new Worker<CartoonizeJobData>(
 
       const response = await fetch(`${CARTOONIZER_URL}/cartoonize`, {
         method: "POST",
-        headers: { "Content-Type": "application/octet-stream" },
+        headers: {
+          "Content-Type": "application/octet-stream",
+          ...(process.env.CARTOONIZER_SHARED_SECRET
+            ? { "x-internal-secret": process.env.CARTOONIZER_SHARED_SECRET }
+            : {}),
+        },
         body: original,
       });
 
@@ -31,11 +35,11 @@ const worker = new Worker<CartoonizeJobData>(
       }
 
       const cartoonBuffer = Buffer.from(await response.arrayBuffer());
-      await fs.writeFile(cartoonPath(postId), cartoonBuffer);
+      const imageUrl = await saveCartoon(postId, cartoonBuffer);
 
       await prisma.post.update({
         where: { id: postId },
-        data: { status: "ready", imageUrl: `${BACKEND_ORIGIN}/cdn/${postId}.jpg` },
+        data: { status: "ready", imageUrl },
       });
     } catch (err) {
       logger.error({ err, postId }, "cartoonize job failed");
