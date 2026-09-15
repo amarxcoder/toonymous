@@ -19,10 +19,14 @@ const credentialsSchema = z.object({
 });
 
 const REFRESH_COOKIE = "refresh_token";
+// sameSite: "none" + secure: true (browsers reject None without Secure) so
+// this cookie still gets sent when the frontend and backend are on
+// different domains, e.g. a Vercel-hosted frontend calling a Render-hosted
+// backend for the free-tier demo deploy.
 const REFRESH_COOKIE_OPTS = {
   httpOnly: true,
-  sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
+  sameSite: "none" as const,
+  secure: true,
   maxAge: REFRESH_TOKEN_TTL_MS,
   path: "/auth",
 };
