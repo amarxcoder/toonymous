@@ -12,15 +12,18 @@ const MODEL_PATH = path.join(__dirname, "..", "..", "models", "face_paint_512_v2
 const SIZE = 512;
 const MAX_DIMENSION = 1024;
 
-// Created on first use and reused. The arena/pattern options trade a little
-// speed for memory: default settings peaked at ~780MB RSS, these at ~250MB,
-// which is what lets it fit a 512MB free-tier host.
+// Created on first use and reused. These options trade ~10% speed for memory
+// so it fits a 512MB free-tier host: default settings peaked over 700MB RSS
+// per image. They only hold the peak down together with the
+// MALLOC_MMAP_THRESHOLD_=1048576 env var (render.yaml, ecosystem.config.js);
+// without it glibc keeps freed buffers and the peak climbs with every image.
 let session: Promise<ort.InferenceSession> | undefined;
 function getSession(): Promise<ort.InferenceSession> {
   session ??= ort.InferenceSession.create(MODEL_PATH, {
     enableCpuMemArena: false,
     enableMemPattern: false,
     intraOpNumThreads: 1,
+    graphOptimizationLevel: "disabled",
   });
   return session;
 }

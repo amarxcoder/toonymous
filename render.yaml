@@ -56,5 +56,10 @@ services:
       # Render's free plan has no GPU.
       - key: ONNXRUNTIME_NODE_INSTALL
         value: skip
+      # Makes glibc hand large freed buffers straight back to the OS. Without
+      # it the model's memory peak climbs past 512MB and the instance is
+      # OOM-killed mid-image (see cartoonizer/src/providers/onnx.ts).
+      - key: MALLOC_MMAP_THRESHOLD_
+        value: "1048576"
       - key: NODE_ENV
         value: production

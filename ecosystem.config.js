@@ -28,7 +28,14 @@ module.exports = {
       name: "toonymous-cartoonizer",
       cwd: "./cartoonizer",
       script: "dist/index.js",
-      env: { NODE_ENV: "production", PORT: "4002", CARTOONIZE_PROVIDER: "onnx" },
+      // MALLOC_MMAP_THRESHOLD_: keeps the onnx provider's memory peak flat
+      // (cartoonizer/src/providers/onnx.ts).
+      env: {
+        NODE_ENV: "production",
+        PORT: "4002",
+        CARTOONIZE_PROVIDER: "onnx",
+        MALLOC_MMAP_THRESHOLD_: "1048576",
+      },
     },
   ],
 };

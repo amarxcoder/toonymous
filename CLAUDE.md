@@ -99,8 +99,8 @@ Two things are MVP stand-ins, not the real thing, and are flagged inline in the 
   via `CARTOONIZE_PROVIDER` env var
   (`cartoonizer/src/providers/`) with zero code changes elsewhere in the pipeline: `onnx`
   (AnimeGANv2 `face_paint_512_v2`, a real trained model run on CPU via `onnxruntime-node`, model
-  committed at `cartoonizer/models/`; ~4-5s and ~330MB RSS per image here, photos never leave the
-  service; dark teeth on open smiles is a known quirk; upstream PyTorch repo is MIT but the ONNX
+  committed at `cartoonizer/models/`; ~4-5s and ~410MB peak RSS per image here, which only holds with
+  `MALLOC_MMAP_THRESHOLD_=1048576` set or it OOMs a 512MB host, photos never leave the service; dark teeth on open smiles is a known quirk; upstream PyTorch repo is MIT but the ONNX
   export's license is unverified, check before a real launch), `sharp` (code default,
   zero installs), `gmic` (shells out to the `gmic` CLI's cartoon filter — not installed on this box,
   needs `sudo apt install gmic`, unverified end to end since installing it needs interactive sudo
