@@ -78,3 +78,44 @@ Given the memory-constrained production box note in root CLAUDE.md, keep the Nod
 lean side; the Python cartoonization microservice is the one component likely to need its own
 resource-sized box or a GPU instance — plan that infra decision separately from the shared VPS once
 real usage is known.
+
+This is still the intended path to a real launch — the free-tier deploy below is a client-review
+demo, not a replacement for it.
+
+### Free-tier demo deploy (client review)
+
+Live for client review, not production: frontend
+[toonymous.vercel.app](https://toonymous.vercel.app), backend
+`https://toonymous-backend.onrender.com`, cartoonizer `https://toonymous-cartoonizer.onrender.com`.
+Config source of truth is `render.yaml` at the repo root (a Render Blueprint) plus each service's
+env vars set directly in the Vercel/Render dashboards (not committed anywhere).
+
+Providers: Vercel (frontend), Render (backend + cartoonizer, free Web Services), Supabase
+(Postgres + object storage), Upstash (Redis). Chosen because they're free and don't require
+Docker on our end — Render's own build/runtime containerizes internally, which is a deploy-target
+detail we don't control, not a project convention change.
+
+This setup needed several adaptations from the real deploy convention above, all gated so local
+dev and a real VPS deploy are unaffected:
+
+- **Backend API + BullMQ worker run combined in one process** (`npm run start:render` in
+  `backend/package.json`) — Render's free plan has no free Background Worker tier, only Web
+  Services.
+- **Cartoonizer is its own public Render web service, not actually internal-only**, guarded by a
+  `CARTOONIZER_SHARED_SECRET` header (`cartoonizer/src/index.ts`, sent by `backend/src/worker.ts`)
+  — Render's free plan has no free Private Service tier either.
+- **Cartoonized images are written to Supabase Storage**, not local disk
+  (`backend/src/lib/storage.ts`'s `saveCartoon`, active whenever `SUPABASE_URL` /
+  `SUPABASE_SERVICE_KEY` / `SUPABASE_BUCKET` are set) — Render's free web services have no
+  persistent disk; it's wiped on every restart, which happens often since idle free services spin
+  down after 15 minutes.
+- **`DATABASE_URL` must use Supabase's session pooler** (the `*.pooler.supabase.com:5432` host,
+  not the direct `db.*.supabase.co:5432` host) — the direct host is IPv6-only on Supabase's free
+  tier and Render can't reach it. The transaction-mode pooler (port 6543) doesn't work either since
+  it can't run Prisma migrations.
+- **Refresh-token cookie is `sameSite: "none", secure: true`** (`backend/src/routes/auth.ts`) —
+  frontend (Vercel) and backend (Render) are different domains, so a `lax` cookie would silently
+  never be sent back on cross-site requests.
+- **Render's build command is `npm install --include=dev && ...`** — `NODE_ENV=production` in the
+  service env otherwise makes npm skip devDependencies, where `typescript`, `@types/*`, and the
+  Prisma CLI live, breaking the build.

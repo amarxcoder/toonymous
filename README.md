@@ -4,6 +4,11 @@ Anonymous, global social app where every posted image is automatically converted
 
 **Status:** MVP phase (Phases 0-7 complete, see [specs/06-checklist.md](specs/06-checklist.md) for detailed breakdown).
 
+**Live demo:** [toonymous.vercel.app](https://toonymous.vercel.app) — a free-tier deploy for
+client review (Vercel + Render + Supabase + Upstash), not the real production setup. See
+[specs/04-conventions.md](specs/04-conventions.md#free-tier-demo-deploy-client-review) for the
+adaptations that deploy needed and why they don't apply to a real launch.
+
 ## Quick Links
 
 - [Product Vision & Design Pillars](specs/01-overview.md)

@@ -137,6 +137,11 @@ convention used in matri's `REFERENCE/updated-checklist.md`).
 - ❌ nginx + TLS, deploy script sourcing nvm (root CLAUDE.md deploy convention) — needs a real
   domain and a deploy target, not buildable against localhost; the convention itself is already
   documented in root CLAUDE.md, nothing project-specific to add until there's a box to point it at
+- ✅ Free-tier client-review deploy (Vercel + Render + Supabase + Upstash) — live at
+  [toonymous.vercel.app](https://toonymous.vercel.app); see
+  [04-conventions.md](04-conventions.md#free-tier-demo-deploy-client-review) for the adaptations
+  this required. A demo stand-in for the item above, not a substitute for it — the real launch
+  still needs the bare-VPS/nginx/TLS path.
 - ✅ Port block 4000-4009 wired per [04-conventions.md](04-conventions.md) — confirmed live: frontend
   4000, backend 4001, cartoonizer 4002 (internal-only, not proxied); root CLAUDE.md's project table
   updated from "assigned, not yet wired up" to active

@@ -117,3 +117,8 @@ Other known MVP gaps, not stubs but worth knowing about:
   `backend/` — there is no self-service or API path to acquire one, by design.
 
 No CI workflow or automated test suite yet.
+
+Live for client review at [toonymous.vercel.app](https://toonymous.vercel.app) via a free-tier
+deploy (Vercel + Render + Supabase + Upstash) — see
+[specs/04-conventions.md](specs/04-conventions.md#free-tier-demo-deploy-client-review) for what
+that required and why it's a demo stand-in, not the real bare-VPS launch path.
