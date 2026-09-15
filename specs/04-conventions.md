@@ -104,6 +104,14 @@ dev and a real VPS deploy are unaffected:
 - **Cartoonizer is its own public Render web service, not actually internal-only**, guarded by a
   `CARTOONIZER_SHARED_SECRET` header (`cartoonizer/src/index.ts`, sent by `backend/src/worker.ts`)
   — Render's free plan has no free Private Service tier either.
+- **Cartoonizer's `onnx` provider is tuned to fit Render's 512MB free instance**: the
+  onnxruntime session runs with graph optimization disabled, no CPU memory arena/pattern, and 1
+  thread (`cartoonizer/src/providers/onnx.ts`), and the service env sets
+  `MALLOC_MMAP_THRESHOLD_=1048576` (`render.yaml`, `ecosystem.config.js`). With default settings,
+  inference peaked at 570-830MB RSS and climbed with every image, so the instance was OOM-killed
+  mid-image and every upload failed. With both changes the peak is a flat ~410MB, and inference is
+  ~10% slower. The env var must be set before the process starts, since glibc reads it at startup,
+  so putting it in `.env` (loaded by dotenv at runtime) does nothing.
 - **Cartoonized images are written to Supabase Storage**, not local disk
   (`backend/src/lib/storage.ts`'s `saveCartoon`, active whenever `SUPABASE_URL` /
   `SUPABASE_SERVICE_KEY` / `SUPABASE_BUCKET` are set) — Render's free web services have no

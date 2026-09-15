@@ -143,7 +143,9 @@ convention used in matri's `REFERENCE/updated-checklist.md`).
   [toonymous.vercel.app](https://toonymous.vercel.app); see
   [04-conventions.md](04-conventions.md#free-tier-demo-deploy-client-review) for the adaptations
   this required. A demo stand-in for the item above, not a substitute for it — the real launch
-  still needs the bare-VPS/nginx/TLS path.
+  still needs the bare-VPS/nginx/TLS path. The `onnx` cartoonizer OOM-killed the 512MB Render
+  instance on every upload until memory tuning landed (8c30baf); verified under a local 512MB
+  cgroup cap (6/6 images, flat ~410MB peak), but a live upload on Render is not yet re-verified.
 - ✅ Port block 4000-4009 wired per [04-conventions.md](04-conventions.md) — confirmed live: frontend
   4000, backend 4001, cartoonizer 4002 (internal-only, not proxied); root CLAUDE.md's project table
   updated from "assigned, not yet wired up" to active

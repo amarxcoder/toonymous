@@ -356,6 +356,7 @@ toonymous/
 Configurable via `CARTOONIZE_PROVIDER` environment variable:
 
 - **`sharp`** (default): Image filter (smooth + saturate + edge outline)
+- **`onnx`**: AnimeGANv2 `face_paint_512_v2` model on CPU, used by the demo deploy and PM2 config. Needs `MALLOC_MMAP_THRESHOLD_=1048576` set in the shell before the process starts (not in `.env`), or its memory use climbs with every image
 - **`gmic`**: G'MIC CLI cartoon filter (requires `sudo apt install gmic`)
 - **`api`**: HTTP passthrough to local model server or hosted API
 
