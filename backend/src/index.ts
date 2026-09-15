@@ -21,8 +21,8 @@ import { startRetentionJob } from "./lib/retention";
 import { cartoonDir } from "./lib/storage";
 
 const app = express();
-const PORT = process.env.PORT ?? 3081;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:3080";
+const PORT = process.env.PORT ?? 4001;
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN ?? "http://localhost:4000";
 
 // Behind nginx in production (root CLAUDE.md deploy convention) - needed so
 // req.ip reflects the real client for rate limiting (F5.3), not the proxy.

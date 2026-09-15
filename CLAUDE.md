@@ -18,7 +18,7 @@ merge with the project-specific rules below rather than repeating them.
   out-of-scope list
 - [specs/03-requirements.md](specs/03-requirements.md) — functional + non-functional requirements
   (security, privacy, scalability, accessibility, compliance)
-- [specs/04-conventions.md](specs/04-conventions.md) — tech stack, port block (3080-3089), folder
+- [specs/04-conventions.md](specs/04-conventions.md) — tech stack, port block (4000-4009), folder
   layout, coding conventions, deploy notes
 - [specs/05-ui-styleguide.md](specs/05-ui-styleguide.md) — single source of truth for all UI: color
   tokens (light + dark), typography, layout, components, motion, voice, accessibility
@@ -66,8 +66,8 @@ philosophy — favor a working, well-understood baseline over an impressive but 
 
 Phase 0 through Phase 7 done (Phase 7 to the extent a local-only setup allows) — see
 [specs/06-checklist.md](specs/06-checklist.md) for the detailed, per-item breakdown including
-MVP-stub caveats. `frontend/` (Next.js, port 3080), `backend/` (Express + Prisma + Postgres +
-BullMQ worker, port 3081), and `cartoonizer/` (Express + sharp, port 3082, internal-only) all run
+MVP-stub caveats. `frontend/` (Next.js, port 4000), `backend/` (Express + Prisma + Postgres +
+BullMQ worker, port 4001), and `cartoonizer/` (Express + sharp, port 4002, internal-only) all run
 locally.
 
 Working end to end: signup/login/refresh/logout, system-generated handles with limited reroll,

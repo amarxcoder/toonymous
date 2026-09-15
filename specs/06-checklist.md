@@ -41,7 +41,7 @@ convention used in matri's `REFERENCE/updated-checklist.md`).
   enqueues a blocked image), but `backend/src/lib/safetyCheck.ts` is an MVP stub that always
   returns safe; **must be replaced with a real CSAM/NSFW vendor before any real user upload**, not
   just before public launch
-- ✅ Cartoonization microservice (`cartoonizer/`, port 3082) + BullMQ job wiring (async, per N3) —
+- ✅ Cartoonization microservice (`cartoonizer/`, port 4002) + BullMQ job wiring (async, per N3) —
   MVP defaults to a lightweight sharp-based smooth+saturate+edge-outline filter, not a trained GAN
   model. Engine is swappable via `CARTOONIZE_PROVIDER` (`cartoonizer/src/providers/`): `sharp`
   (default), `gmic` (G'MIC CLI cartoon filter — no GPU, works on arbitrary photos, not face-only;
@@ -137,8 +137,8 @@ convention used in matri's `REFERENCE/updated-checklist.md`).
 - ❌ nginx + TLS, deploy script sourcing nvm (root CLAUDE.md deploy convention) — needs a real
   domain and a deploy target, not buildable against localhost; the convention itself is already
   documented in root CLAUDE.md, nothing project-specific to add until there's a box to point it at
-- ✅ Port block 3080-3089 wired per [04-conventions.md](04-conventions.md) — confirmed live: frontend
-  3080, backend 3081, cartoonizer 3082 (internal-only, not proxied); root CLAUDE.md's project table
+- ✅ Port block 4000-4009 wired per [04-conventions.md](04-conventions.md) — confirmed live: frontend
+  4000, backend 4001, cartoonizer 4002 (internal-only, not proxied); root CLAUDE.md's project table
   updated from "assigned, not yet wired up" to active
 - ✅ Data retention scheduled jobs (original-image purge safety net, deleted-account purge SLA)
   (N2) — `backend/src/lib/retention.ts`, hourly `node-cron` job sweeping any intake file older than

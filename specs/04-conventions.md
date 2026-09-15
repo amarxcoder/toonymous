@@ -26,15 +26,15 @@ installer), not containers — in local dev and in production alike.
 
 ## Ports
 
-Assigned block: **3080-3089** (next free block per the root CLAUDE.md port table at the time this
+Assigned block: **4000-4009** (next free block per the root CLAUDE.md port table at the time this
 project was created).
 
 | Port | Service |
 |---|---|
-| 3080 | Frontend (Next.js) |
-| 3081 | Backend API |
-| 3082 | Cartoonization inference microservice (internal only, not public-facing) |
-| 3083-3089 | Reserved for future services (admin/moderation console, etc.) |
+| 4000 | Frontend (Next.js) |
+| 4001 | Backend API |
+| 4002 | Cartoonization inference microservice (internal only, not public-facing) |
+| 4003-4009 | Reserved for future services (admin/moderation console, etc.) |
 
 Root CLAUDE.md's port table and project list are updated alongside this file — see the diff there.
 

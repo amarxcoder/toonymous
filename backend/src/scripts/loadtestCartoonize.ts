@@ -8,7 +8,7 @@ import { cartoonizeQueue } from "../lib/queue";
 // extra infra. Run with: `npx ts-node src/scripts/loadtestCartoonize.ts [count]`
 // against a running `npm run dev` + `npm run worker` + cartoonizer.
 
-const BACKEND = process.env.BACKEND_ORIGIN ?? "http://localhost:3081";
+const BACKEND = process.env.BACKEND_ORIGIN ?? "http://localhost:4001";
 const COUNT = Number(process.argv[2] ?? 30);
 
 async function makeTestUser(): Promise<string> {

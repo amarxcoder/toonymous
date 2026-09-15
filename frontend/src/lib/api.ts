@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3081";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001";
 
 export type UserRole = "user" | "moderator" | "complianceOfficer";
 

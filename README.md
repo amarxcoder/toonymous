@@ -17,9 +17,9 @@ Anonymous, global social app where every posted image is automatically converted
 
 | Component | Stack | Port |
 |-----------|-------|------|
-| **Frontend** | Next.js (React + TypeScript) | 3080 |
-| **Backend API** | Node.js + Express + Prisma | 3081 |
-| **Cartoonizer** | Node.js + Express + Sharp | 3082 |
+| **Frontend** | Next.js (React + TypeScript) | 4000 |
+| **Backend API** | Node.js + Express + Prisma | 4001 |
+| **Cartoonizer** | Node.js + Express + Sharp | 4002 |
 | **Primary Database** | PostgreSQL | 5432 |
 | **Cache/Queue** | Redis | 6379 |
 | **Job Queue** | BullMQ (backed by Redis) | - |
@@ -163,7 +163,7 @@ cp .env.example .env
 
 # Edit .env with API endpoint
 # Required variables:
-# - NEXT_PUBLIC_API_URL=http://localhost:3081
+# - NEXT_PUBLIC_API_URL=http://localhost:4001
 
 nano .env
 
@@ -199,21 +199,21 @@ Option A: Run each service in separate terminals
 ```bash
 cd backend
 npm run dev
-# Backend running on http://localhost:3081
+# Backend running on http://localhost:4001
 ```
 
 **Terminal 2 - Cartoonizer Microservice:**
 ```bash
 cd cartoonizer
 npm run dev
-# Cartoonizer running on http://localhost:3082 (internal only)
+# Cartoonizer running on http://localhost:4002 (internal only)
 ```
 
 **Terminal 3 - Frontend:**
 ```bash
 cd frontend
 npm run dev
-# Frontend running on http://localhost:3080
+# Frontend running on http://localhost:4000
 ```
 
 Option B: Use PM2 (production-like setup)
@@ -233,9 +233,9 @@ pm2 monit
 
 ### Access the Application
 
-- **Frontend:** http://localhost:3080
-- **Backend API:** http://localhost:3081
-- **Cartoonizer:** http://localhost:3082 (internal, not accessible from browser)
+- **Frontend:** http://localhost:4000
+- **Backend API:** http://localhost:4001
+- **Cartoonizer:** http://localhost:4002 (internal, not accessible from browser)
 
 ## Development Workflow
 
@@ -391,10 +391,10 @@ brew services restart redis
 ### Port Already in Use
 
 ```bash
-# Find process using port 3080/3081/3082
-lsof -i :3080
-lsof -i :3081
-lsof -i :3082
+# Find process using port 4000/4001/4002
+lsof -i :4000
+lsof -i :4001
+lsof -i :4002
 
 # Kill the process if needed (replace PID)
 kill -9 <PID>
