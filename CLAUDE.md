@@ -94,9 +94,14 @@ Two things are MVP stand-ins, not the real thing, and are flagged inline in the 
   restricted-workflow plumbing (`ComplianceFlag` model, `/compliance` routes, `/admin/compliance`
   UI, its own `complianceOfficer` role) is real and verified end to end with a manually inserted
   flag — only the detector itself is a stub.
-- `cartoonizer/`'s default effect is a sharp image filter (smooth + saturate + edge outline), not a
-  trained model. The engine is now swappable via `CARTOONIZE_PROVIDER` env var
-  (`cartoonizer/src/providers/`) with zero code changes elsewhere in the pipeline: `sharp` (default,
+- `cartoonizer/`'s code default is a sharp image filter (smooth + saturate + edge outline), not a
+  trained model; the demo deploy and PM2 config run `onnx` instead (below). The engine is swappable
+  via `CARTOONIZE_PROVIDER` env var
+  (`cartoonizer/src/providers/`) with zero code changes elsewhere in the pipeline: `onnx`
+  (AnimeGANv2 `face_paint_512_v2`, a real trained model run on CPU via `onnxruntime-node`, model
+  committed at `cartoonizer/models/`; ~4-5s and ~330MB RSS per image here, photos never leave the
+  service; dark teeth on open smiles is a known quirk; upstream PyTorch repo is MIT but the ONNX
+  export's license is unverified, check before a real launch), `sharp` (code default,
   zero installs), `gmic` (shells out to the `gmic` CLI's cartoon filter — not installed on this box,
   needs `sudo apt install gmic`, unverified end to end since installing it needs interactive sudo
   this environment doesn't have), `api` (generic HTTP passthrough to a local model server or hosted

@@ -1,5 +1,6 @@
 import { apiCartoonize } from "./api";
 import { gmicCartoonize } from "./gmic";
+import { onnxCartoonize } from "./onnx";
 import { sharpCartoonize } from "./sharpFilter";
 
 export type CartoonizeFn = (input: Buffer) => Promise<Buffer>;
@@ -8,6 +9,7 @@ const PROVIDERS: Record<string, CartoonizeFn> = {
   sharp: sharpCartoonize,
   gmic: gmicCartoonize,
   api: apiCartoonize,
+  onnx: onnxCartoonize,
 };
 
 // CARTOONIZE_PROVIDER picks the engine at process start — swap models

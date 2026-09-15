@@ -49,5 +49,12 @@ services:
         value: 0.0.0.0
       - key: CARTOONIZER_SHARED_SECRET
         sync: false
+      # AnimeGANv2 model, run on CPU in-process (cartoonizer/src/providers/onnx.ts).
+      - key: CARTOONIZE_PROVIDER
+        value: onnx
+      # Skip onnxruntime-node's ~270MB CUDA/TensorRT download at npm install;
+      # Render's free plan has no GPU.
+      - key: ONNXRUNTIME_NODE_INSTALL
+        value: skip
       - key: NODE_ENV
         value: production

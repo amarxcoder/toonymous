@@ -44,7 +44,9 @@ convention used in matri's `REFERENCE/updated-checklist.md`).
 - ✅ Cartoonization microservice (`cartoonizer/`, port 4002) + BullMQ job wiring (async, per N3) —
   MVP defaults to a lightweight sharp-based smooth+saturate+edge-outline filter, not a trained GAN
   model. Engine is swappable via `CARTOONIZE_PROVIDER` (`cartoonizer/src/providers/`): `sharp`
-  (default), `gmic` (G'MIC CLI cartoon filter — no GPU, works on arbitrary photos, not face-only;
+  (default), `onnx` (AnimeGANv2 `face_paint_512_v2` on CPU via `onnxruntime-node`, used by the
+  demo deploy and PM2 config; hosted "free" AI image APIs checked Sept 2026 and none had a usable
+  free tier), `gmic` (G'MIC CLI cartoon filter — no GPU, works on arbitrary photos, not face-only;
   not installed on this box, unverified), `api` (passthrough to a local model server or hosted API,
   for a future local LLM/vision API swap). Photo2Cartoon/StyleCariGAN ruled out as the default:
   face-only GANs, and posts here aren't guaranteed portraits. ComfyUI+FLUX Kontext ruled out: no GPU

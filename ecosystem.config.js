@@ -28,7 +28,7 @@ module.exports = {
       name: "toonymous-cartoonizer",
       cwd: "./cartoonizer",
       script: "dist/index.js",
-      env: { NODE_ENV: "production", PORT: "4002" },
+      env: { NODE_ENV: "production", PORT: "4002", CARTOONIZE_PROVIDER: "onnx" },
     },
   ],
 };
