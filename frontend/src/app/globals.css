@@ -5,7 +5,7 @@
    themes. bg/border/text stay identical across themes (layout and contrast
    are theme-independent); only the accent trio + gradient differ. Theme is
    switched via [data-theme] on <html>, set before paint by the inline
-   script in layout.tsx to avoid a flash. "violet" is the :root default. */
+   script in layout.tsx to avoid a flash. "ocean" is the :root default. */
 :root {
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 
@@ -17,22 +17,31 @@
   --text-primary: #18181b;
   --text-secondary: #6b6b70;
   --text-faint: #9498a3;
+  --accent-primary: #3a86ff;
+  --accent-primary-hover: #1d4ed8;
+  --accent-primary-text: #1d4ed8;
+  /* Secondary/tertiary accents: decorative only (logo mark, gradient CTAs,
+     avatar rings) - never used for body text, so they don't need their own
+     AA-text shade. Kept out of large fills per the styleguide's "used
+     sparingly" rule. */
+  --accent-secondary: #00b4d8;
+  --accent-tertiary: #8338ec;
+  --accent-success: #16a34a;
+  --accent-danger: #dc2626;
+  --accent-warning: #d97706;
+  --shadow-card: 0 1px 2px rgba(10, 12, 20, 0.04), 0 12px 28px -16px rgba(10, 12, 20, 0.16);
+}
+
+/* Violet: indigo/pink/amber. */
+[data-theme="violet"] {
   --accent-primary: #7c5cfc;
   --accent-primary-hover: #6b4ce0;
   /* Text-sized uses of the brand accent need a darker shade than the fill
      color to clear WCAG AA's 4.5:1 for normal text (#7C5CFC on white is only
      4.38:1) - reuses the existing hover shade, which already passes. */
   --accent-primary-text: #6b4ce0;
-  /* Secondary/tertiary accents: decorative only (logo mark, gradient CTAs,
-     avatar rings) - never used for body text, so they don't need their own
-     AA-text shade. Kept out of large fills per the styleguide's "used
-     sparingly" rule. */
   --accent-secondary: #d92a89;
   --accent-tertiary: #b06600;
-  --accent-success: #16a34a;
-  --accent-danger: #dc2626;
-  --accent-warning: #d97706;
-  --shadow-card: 0 1px 2px rgba(10, 12, 20, 0.04), 0 12px 28px -16px rgba(10, 12, 20, 0.16);
 }
 
 /* Sunset: coral/pink/amber. */
@@ -42,15 +51,6 @@
   --accent-primary-text: #9a3412;
   --accent-secondary: #ff006e;
   --accent-tertiary: #ffbe0b;
-}
-
-/* Ocean: sky blue/cyan/indigo. */
-[data-theme="ocean"] {
-  --accent-primary: #3a86ff;
-  --accent-primary-hover: #1d4ed8;
-  --accent-primary-text: #1d4ed8;
-  --accent-secondary: #00b4d8;
-  --accent-tertiary: #8338ec;
 }
 
 /* Mint: spring green/yellow/teal. */

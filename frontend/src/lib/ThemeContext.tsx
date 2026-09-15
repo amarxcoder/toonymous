@@ -18,9 +18,9 @@ const STORAGE_KEY = "toonymous-theme";
 // Inline script in layout.tsx already stamps data-theme on <html> before
 // paint (no flash); this just keeps React state and the DOM attribute in
 // sync once the app hydrates, and persists explicit choices. Light-only:
-// "violet" is the default accent theme, not a color-scheme fallback.
+// "ocean" is the default accent theme, not a color-scheme fallback.
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("violet");
+  const [theme, setThemeState] = useState<Theme>("ocean");
 
   useEffect(() => {
     const current = document.documentElement.getAttribute("data-theme");
@@ -55,7 +55,7 @@ export const THEME_INIT_SCRIPT = `
   try {
     var valid = ${JSON.stringify(THEMES)};
     var stored = localStorage.getItem('${STORAGE_KEY}');
-    var theme = valid.indexOf(stored) !== -1 ? stored : 'violet';
+    var theme = valid.indexOf(stored) !== -1 ? stored : 'ocean';
     document.documentElement.setAttribute('data-theme', theme);
   } catch (e) {}
 })();

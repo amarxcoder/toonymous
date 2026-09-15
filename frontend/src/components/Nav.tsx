@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/AuthContext";
 import { strings } from "@/lib/strings";
 import { BellIcon, HomeIcon, PlusSquareIcon, UserIcon } from "./Icons";
 import { LogoMark, LogoWordmark } from "./Logo";
-import { ThemeToggle } from "./ThemeToggle";
 
 // Four destinations, no more (05-ui-styleguide.md): no location tab, no
 // "explore/for-you" tab, deliberately, per the no-suggestions pillar.
@@ -68,10 +67,6 @@ export function Nav() {
 
         <div className="flex-1" />
 
-        <div className="mb-2.5 ml-1.5">
-          <ThemeToggle />
-        </div>
-
         {me && (
           <div className="mx-1 flex items-center gap-2.5 rounded-[10px] border border-border bg-bg-surface p-2">
             <Image
@@ -98,7 +93,6 @@ export function Nav() {
           <LogoMark size={28} />
           <LogoWordmark />
         </Link>
-        <ThemeToggle />
       </header>
 
       {/* Bottom tab bar, mobile/tablet */}
