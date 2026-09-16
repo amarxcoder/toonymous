@@ -360,6 +360,8 @@ Configurable via `CARTOONIZE_PROVIDER` environment variable:
 - **`gmic`**: G'MIC CLI cartoon filter (requires `sudo apt install gmic`)
 - **`api`**: HTTP passthrough to local model server or hosted API
 
+Users also pick a style per post (`anime`, `sketch`, `comic`), sent to the cartoonizer as `POST /cartoonize?style=<name>`. Each style maps to a fixed engine in `cartoonizer/src/providers/index.ts`; requests without a style use `CARTOONIZE_PROVIDER`.
+
 ### Privacy & Anonymity
 
 **Non-negotiable pillars (see [specs/01-overview.md](specs/01-overview.md)):**

@@ -1,6 +1,6 @@
 import "dotenv/config";
 import express from "express";
-import { getCartoonizeFn } from "./providers";
+import { STYLES, getCartoonizeFn } from "./providers";
 
 // Engine selection lives in providers/index.ts, picked at start via
 // CARTOONIZE_PROVIDER. Every other service in the pipeline (worker, CDN
@@ -37,8 +37,19 @@ app.post(
       res.status(400).json({ error: "no image body" });
       return;
     }
+    const style = req.query.style;
+    const fn =
+      style === undefined
+        ? cartoonize
+        : typeof style === "string" && Object.hasOwn(STYLES, style)
+          ? STYLES[style]
+          : undefined;
+    if (!fn) {
+      res.status(400).json({ error: "unknown style" });
+      return;
+    }
     try {
-      const output = await cartoonize(req.body);
+      const output = await fn(req.body);
       res.set("Content-Type", "image/jpeg");
       res.send(output);
     } catch (err) {

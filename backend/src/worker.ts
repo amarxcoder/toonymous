@@ -13,13 +13,14 @@ const CARTOONIZER_URL = process.env.CARTOONIZER_URL ?? "http://127.0.0.1:4002";
 const worker = new Worker<CartoonizeJobData>(
   "cartoonize",
   async (job) => {
-    const { postId } = job.data;
+    const { postId, style } = job.data;
     const inPath = intakePath(postId);
 
     try {
       const original = await fs.readFile(inPath);
 
-      const response = await fetch(`${CARTOONIZER_URL}/cartoonize`, {
+      const query = style ? `?style=${style}` : "";
+      const response = await fetch(`${CARTOONIZER_URL}/cartoonize${query}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/octet-stream",

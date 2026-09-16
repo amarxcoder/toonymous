@@ -2,7 +2,7 @@
 
 import { DragEvent, FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ApiError, Post, createPost, getPost } from "@/lib/api";
+import { ApiError, CARTOON_STYLES, CartoonStyle, Post, createPost, getPost } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/Button";
@@ -15,6 +15,7 @@ export default function ComposePage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
+  const [style, setStyle] = useState<CartoonStyle>("anime");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [post, setPost] = useState<Post | null>(null);
@@ -40,7 +41,7 @@ export default function ComposePage() {
     setError(null);
     setSubmitting(true);
     try {
-      const created = await createPost(accessToken, file, caption);
+      const created = await createPost(accessToken, file, caption, style);
       setPost(created);
       if (created.status === "pending") {
         pollRef.current = setInterval(async () => {
@@ -106,6 +107,31 @@ export default function ComposePage() {
             className="sr-only"
           />
         </label>
+
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="mb-1.5 text-sm font-medium text-text-primary">{strings.compose.styleLabel}</legend>
+          <div className="grid grid-cols-3 gap-2">
+            {CARTOON_STYLES.map((s) => (
+              <label
+                key={s}
+                className={`flex cursor-pointer flex-col gap-0.5 rounded-[10px] border px-3 py-2.5 transition-colors duration-150 ease-out has-[:focus-visible]:border-accent-primary ${
+                  style === s ? "border-accent-primary bg-accent-primary/10" : "border-border bg-bg-surface hover:border-accent-primary"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="style"
+                  value={s}
+                  checked={style === s}
+                  onChange={() => setStyle(s)}
+                  className="sr-only"
+                />
+                <span className="text-sm font-semibold text-text-primary">{strings.compose.styles[s].label}</span>
+                <span className="text-xs text-text-faint">{strings.compose.styles[s].hint}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <div className="flex gap-2.5 rounded-[10px] bg-accent-primary/10 p-3 text-xs leading-relaxed text-text-secondary">
           <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0 text-accent-primary-text" />

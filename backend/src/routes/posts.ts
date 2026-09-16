@@ -8,7 +8,7 @@ import { optionalAuth } from "../lib/optionalAuth";
 import { scrubPii } from "../lib/piiFilter";
 import { postCreateLimiter } from "../lib/rateLimit";
 import { prisma } from "../lib/prisma";
-import { cartoonizeQueue } from "../lib/queue";
+import { CARTOON_STYLES, cartoonizeQueue } from "../lib/queue";
 import { AuthedRequest, requireAuth } from "../lib/requireAuth";
 import { checkImageSafety } from "../lib/safetyCheck";
 import { intakePath } from "../lib/storage";
@@ -22,6 +22,7 @@ const upload = multer({
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const captionSchema = z.string().max(280).optional();
+const styleSchema = z.enum(CARTOON_STYLES).optional();
 
 type PostWithCounts = {
   id: string;
@@ -102,6 +103,12 @@ postsRouter.post(
     }
     const caption = captionResult.data ? scrubPii(captionResult.data) : null;
 
+    const styleResult = styleSchema.safeParse(req.body.style);
+    if (!styleResult.success) {
+      res.status(400).json({ error: "unknown style" });
+      return;
+    }
+
     // Re-encode strips all EXIF/embedded metadata (F1.2) — sharp does not
     // carry metadata forward unless withMetadata() is called.
     const stripped = await sharp(file.buffer).rotate().jpeg().toBuffer();
@@ -129,7 +136,7 @@ postsRouter.post(
     }
 
     await fs.writeFile(intakePath(post.id), stripped);
-    await cartoonizeQueue.add("cartoonize", { postId: post.id });
+    await cartoonizeQueue.add("cartoonize", { postId: post.id, style: styleResult.data });
 
     res.status(201).json(postSummary(post, { userId: req.userId }));
   })

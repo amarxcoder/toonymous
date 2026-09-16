@@ -51,6 +51,13 @@ convention used in matri's `REFERENCE/updated-checklist.md`).
   for a future local LLM/vision API swap). Photo2Cartoon/StyleCariGAN ruled out as the default:
   face-only GANs, and posts here aren't guaranteed portraits. ComfyUI+FLUX Kontext ruled out: no GPU
   on this box and it's already RAM-constrained.
+- ✅ Per-post style presets (v1.x item from [02-features.md](02-features.md)) — compose page picker
+  (Anime / Sketch / Comic) → `style` form field validated against `CARTOON_STYLES`
+  (`backend/src/lib/queue.ts`) → job data → `POST /cartoonize?style=` → `STYLES` in
+  `cartoonizer/src/providers/index.ts` (`anime` = onnx, `sketch` = sharp pencil filter, `comic` =
+  sharp filter). No style falls back to `CARTOONIZE_PROVIDER`. AnimeGANv2 Hayao/Paprika/Shinkai
+  ONNX exports were tried and look better on scenes, but upstream license is non-commercial only,
+  so not added.
 - ✅ Original image guaranteed-deletion step (F1.3) — worker deletes the intake file in a `finally`
   block on both success and failure; safety-check-blocked images never touch disk at all
 - ✅ Cartoonized output → local disk → served at `/cdn/:id.jpg` (dev stand-in for S3 + real CDN per

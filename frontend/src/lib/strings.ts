@@ -91,6 +91,12 @@ export const strings = {
     dropzoneHint: "Converted to a cartoon instantly. The original is never stored.",
     safetyNote:
       "Your photo is processed only long enough to generate the cartoon. Toonymous never stores, displays, or can recover the original, for you or anyone else.",
+    styleLabel: "Cartoon style",
+    styles: {
+      anime: { label: "Anime", hint: "Best for faces" },
+      sketch: { label: "Sketch", hint: "Pencil drawing" },
+      comic: { label: "Comic", hint: "Bold colors, inked edges" },
+    },
     captionLabel: "Caption (optional)",
     submit: "Post",
     submitting: "Posting...",

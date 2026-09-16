@@ -102,10 +102,15 @@ export interface Post {
   isOwnPost: boolean;
 }
 
-export function createPost(accessToken: string, image: File, caption: string) {
+// Must match CARTOON_STYLES in backend/src/lib/queue.ts.
+export const CARTOON_STYLES = ["anime", "sketch", "comic"] as const;
+export type CartoonStyle = (typeof CARTOON_STYLES)[number];
+
+export function createPost(accessToken: string, image: File, caption: string, style: CartoonStyle) {
   const body = new FormData();
   body.append("image", image);
   if (caption) body.append("caption", caption);
+  body.append("style", style);
   return request<Post>("/posts", { method: "POST", accessToken, body });
 }
 

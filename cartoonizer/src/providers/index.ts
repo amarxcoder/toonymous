@@ -2,6 +2,7 @@ import { apiCartoonize } from "./api";
 import { gmicCartoonize } from "./gmic";
 import { onnxCartoonize } from "./onnx";
 import { sharpCartoonize } from "./sharpFilter";
+import { sketchCartoonize } from "./sketch";
 
 export type CartoonizeFn = (input: Buffer) => Promise<Buffer>;
 
@@ -25,3 +26,12 @@ export function getCartoonizeFn(): CartoonizeFn {
   }
   return fn;
 }
+
+// Per-post style presets the user picks at post time (specs/02-features.md).
+// Keys must match CARTOON_STYLES in backend/src/lib/queue.ts. A request with
+// no style falls back to the CARTOONIZE_PROVIDER engine above.
+export const STYLES: Record<string, CartoonizeFn> = {
+  anime: onnxCartoonize,
+  sketch: sketchCartoonize,
+  comic: sharpCartoonize,
+};
