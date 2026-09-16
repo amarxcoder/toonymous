@@ -1,13 +1,11 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import Image from "next/image";
+import { FormEvent, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ApiError,
   Post,
-  avatarUrl,
   blockHandle,
   followHandle,
   reportContent,
@@ -17,26 +15,31 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { useToast } from "@/lib/ToastContext";
 import { strings } from "@/lib/strings";
+import { timeAgo } from "@/lib/time";
+import { Avatar } from "./Avatar";
 import { Button } from "./Button";
-import { CheckIcon, CommentIcon, HeartIcon, MoreIcon } from "./Icons";
-
-function timeAgo(iso: string): string {
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
+import { ConfirmDialog } from "./ConfirmDialog";
+import { IconButton } from "./IconButton";
+import { AlertIcon, CheckIcon, CommentIcon, HeartIcon, MoreIcon, TrashIcon } from "./Icons";
+import { Menu, MenuItem } from "./Menu";
+import { PostImage } from "./PostImage";
+import { Sheet } from "./Sheet";
+import { TextArea } from "./TextField";
 
 // No location/identity line here, ever (F2.4/F3.1) - handle + avatar only.
 export function PostCard({
   post,
+  priority = false,
+  showCommentsLink = true,
   onHidden,
 }: {
   post: Post;
+  /* The first card in a feed loads its image eagerly so the top of the page
+     is complete as soon as possible. */
+  priority?: boolean;
+  /* False on the post detail screen, where a "view all comments" link would
+     point at the page the reader is already on. */
+  showCommentsLink?: boolean;
   // Called when the viewer blocks this post's author, so the feed can drop
   // it from view immediately without waiting for a reload.
   onHidden?: () => void;
@@ -47,11 +50,22 @@ export function PostCard({
   const [liked, setLiked] = useState(post.liked);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [following, setFollowing] = useState(post.following);
-  const [busy, setBusy] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
   const [confirmingBlock, setConfirmingBlock] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [reportReason, setReportReason] = useState("");
+  const [reportBusy, setReportBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Drives the one-shot tap animation on the heart; cleared when it ends so
+  // the same class can be re-applied on the next tap.
+  const [likeAnimating, setLikeAnimating] = useState(false);
+  // Guards against a second toggle being sent while the first is in flight,
+  // without visually disabling the button (the optimistic state already
+  // answered the tap).
+  const likeInFlight = useRef(false);
+  // Both the report sheet and the block dialog are opened from a menu item
+  // that unmounts with its menu, so focus is handed back here instead.
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
 
   function requireLogin() {
     router.push("/login");
@@ -59,45 +73,62 @@ export function PostCard({
 
   async function onLike() {
     if (!accessToken) return requireLogin();
-    setBusy(true);
+    if (likeInFlight.current) return;
+    likeInFlight.current = true;
+
+    // Optimistic: the heart responds on the same frame as the tap, and the
+    // server response below reconciles the real count.
+    const previous = { liked, likeCount };
+    setLiked(!liked);
+    setLikeCount((c) => c + (liked ? -1 : 1));
+    if (!liked) setLikeAnimating(true);
+
     try {
       const result = await toggleLike(accessToken, post.id);
       setLiked(result.liked);
       setLikeCount(result.likeCount);
     } catch {
-      // Non-fatal - the like button just doesn't update.
+      // Roll back to what the server last told us rather than leaving a like
+      // that did not actually land.
+      setLiked(previous.liked);
+      setLikeCount(previous.likeCount);
     } finally {
-      setBusy(false);
+      likeInFlight.current = false;
     }
   }
 
   async function onFollow() {
     if (!accessToken) return requireLogin();
-    setBusy(true);
+    setFollowBusy(true);
     try {
       if (following) {
         await unfollowHandle(accessToken, post.handle);
+        showToast(strings.postCard.unfollowed);
       } else {
         await followHandle(accessToken, post.handle);
+        showToast(strings.postCard.followed, "success");
       }
       setFollowing(!following);
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : strings.postCard.followError, "error");
     } finally {
-      setBusy(false);
+      setFollowBusy(false);
     }
   }
 
   async function onSubmitReport(e: FormEvent) {
     e.preventDefault();
     if (!accessToken || !reportReason.trim()) return;
+    setReportBusy(true);
     try {
       await reportContent(accessToken, "post", post.id, reportReason.trim());
-      showToast(strings.postCard.reportSent);
+      showToast(strings.postCard.reportSent, "success");
       setReporting(false);
       setReportReason("");
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : strings.postCard.reportError, "error");
+    } finally {
+      setReportBusy(false);
     }
   }
 
@@ -105,6 +136,9 @@ export function PostCard({
     if (!accessToken) return requireLogin();
     try {
       await blockHandle(accessToken, post.handle);
+      // Closed before onHidden, which may unmount this card entirely.
+      setConfirmingBlock(false);
+      showToast(strings.postCard.blockedToast, "success");
       onHidden?.();
     } catch (err) {
       showToast(err instanceof ApiError ? err.message : strings.postCard.blockError, "error");
@@ -113,152 +147,153 @@ export function PostCard({
   }
 
   return (
-    <article className="flex flex-col gap-3 rounded-2xl border border-border bg-bg-surface p-4 shadow-[var(--shadow-card)]">
+    <article className="group flex flex-col gap-3 rounded-2xl border border-border bg-bg-surface p-4 shadow-card transition-shadow duration-[var(--dur)] ease-out hover:shadow-pop">
       <div className="flex items-center gap-2.5">
-        <div className="brand-gradient shrink-0 rounded-full p-[1.5px]">
-          <div className="rounded-full bg-bg-surface p-[1.5px]">
-            <Image
-              src={avatarUrl(post.avatarSeed)}
-              alt=""
-              width={36}
-              height={36}
-              unoptimized
-              className="rounded-full"
-            />
-          </div>
-        </div>
+        <Avatar seed={post.avatarSeed} size={36} ring />
         <div className="min-w-0 flex-1">
           <div className="truncate font-mono text-[13.5px] font-semibold">{post.handle}</div>
           <div className="flex items-center gap-1.5 text-[11.5px] text-text-faint">
-            <span className="inline-flex items-center gap-1 font-medium text-accent-success">
+            {/* Always literally true for anything reaching the feed, which is
+                the only reason a permanent trust badge is safe here. */}
+            <span className="inline-flex items-center gap-1 rounded-pill bg-accent-success/10 px-1.5 py-0.5 font-medium text-accent-success">
               <CheckIcon className="h-2.5 w-2.5" />
               {strings.postCard.cartoonizedBadge}
             </span>
-            · {timeAgo(post.createdAt)}
+            <span aria-hidden>·</span>
+            <time dateTime={post.createdAt}>{timeAgo(post.createdAt)}</time>
           </div>
         </div>
         {!post.isOwnPost && (
           <button
             onClick={onFollow}
-            disabled={busy}
-            className="shrink-0 cursor-pointer text-xs font-semibold text-accent-primary-text disabled:opacity-50"
+            disabled={followBusy}
+            className={`shrink-0 cursor-pointer rounded-pill px-3 py-1.5 text-xs font-semibold transition-all duration-[var(--dur-fast)] ease-out active:scale-95 disabled:opacity-50 ${
+              following
+                ? "border border-border text-text-secondary hover:border-border-strong hover:text-text-primary"
+                : "border border-transparent bg-accent-primary/10 text-accent-primary-text hover:bg-accent-primary/16"
+            }`}
           >
             {following ? strings.postCard.following : strings.postCard.follow}
           </button>
         )}
         <div className="relative shrink-0">
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label={strings.postCard.moreActions}
+          <IconButton
+            ref={moreButtonRef}
+            label={strings.postCard.moreActions}
+            size="sm"
             aria-expanded={menuOpen}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-text-faint hover:bg-bg-base hover:text-text-primary"
+            aria-haspopup="menu"
+            onClick={() => setMenuOpen((v) => !v)}
           >
             <MoreIcon className="h-[18px] w-[18px]" />
-          </button>
-          {menuOpen && (
-            <div
-              role="menu"
-              className="absolute top-9 right-0 z-10 flex w-40 flex-col overflow-hidden rounded-[10px] border border-border bg-bg-elevated py-1 shadow-[var(--shadow-card)]"
+          </IconButton>
+          <Menu
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            label={strings.postCard.moreActions}
+          >
+            <MenuItem
+              icon={<AlertIcon className="h-4 w-4" />}
+              onClick={() => {
+                setMenuOpen(false);
+                if (accessToken) setReporting(true);
+                else requireLogin();
+              }}
             >
-              <button
-                role="menuitem"
+              {strings.postCard.report}
+            </MenuItem>
+            {!post.isOwnPost && (
+              <MenuItem
+                destructive
+                icon={<TrashIcon className="h-4 w-4" />}
                 onClick={() => {
                   setMenuOpen(false);
-                  if (accessToken) setReporting((v) => !v);
+                  if (accessToken) setConfirmingBlock(true);
                   else requireLogin();
                 }}
-                className="cursor-pointer px-3.5 py-2 text-left text-[13px] font-medium text-text-primary hover:bg-bg-base"
               >
-                {strings.postCard.report}
-              </button>
-              {!post.isOwnPost && (
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    if (accessToken) setConfirmingBlock(true);
-                    else requireLogin();
-                  }}
-                  className="cursor-pointer px-3.5 py-2 text-left text-[13px] font-medium text-accent-danger hover:bg-bg-base"
-                >
-                  {strings.postCard.block}
-                </button>
-              )}
-            </div>
-          )}
+                {strings.postCard.block}
+              </MenuItem>
+            )}
+          </Menu>
         </div>
       </div>
 
-      {post.imageUrl && (
-        <Link href={`/post/${post.id}`} className="block aspect-square overflow-hidden rounded-[16px] bg-bg-base">
-          <Image
-            src={post.imageUrl}
-            alt={strings.postCard.imageAlt}
-            width={600}
-            height={600}
-            unoptimized
-            className="h-full w-full object-cover"
-          />
-        </Link>
-      )}
+      <Link
+        href={`/post/${post.id}`}
+        className="block overflow-hidden rounded-xl"
+        aria-label={strings.postDetail.title}
+      >
+        <PostImage src={post.imageUrl} priority={priority} />
+      </Link>
 
       <div className="flex items-center gap-1">
-        <button
-          onClick={onLike}
-          disabled={busy}
+        <IconButton
+          label={liked ? strings.postCard.liked : strings.postCard.like}
           aria-pressed={liked}
-          aria-label={liked ? strings.postCard.liked : strings.postCard.like}
-          className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-transform duration-150 ease-out hover:bg-bg-base active:scale-90 disabled:opacity-50 ${
-            liked ? "text-accent-secondary" : "text-text-primary"
-          }`}
+          onClick={onLike}
+          size="sm"
+          tone={liked ? "like" : "strong"}
         >
-          <HeartIcon className="h-[22px] w-[22px]" fill={liked ? "currentColor" : "none"} />
-        </button>
+          <HeartIcon
+            className={`h-[22px] w-[22px] ${likeAnimating ? "animate-like-pop" : ""}`}
+            fill={liked ? "currentColor" : "none"}
+            onAnimationEnd={() => setLikeAnimating(false)}
+          />
+        </IconButton>
         <Link
           href={`/post/${post.id}`}
           aria-label={strings.postCard.comments}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-text-primary hover:bg-bg-base"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-text-primary transition-all duration-[var(--dur-fast)] ease-out hover:bg-bg-subtle active:scale-90"
         >
           <CommentIcon className="h-[22px] w-[22px]" />
         </Link>
       </div>
 
-      {likeCount > 0 && <div className="text-[13.5px] font-bold">{likeCount} {strings.postCard.likesLabel}</div>}
+      {likeCount > 0 && (
+        <div className="text-[13.5px] font-bold tabular-nums">
+          {likeCount} {strings.postCard.likesLabel}
+        </div>
+      )}
 
       {post.caption && (
-        <p className="text-[13.8px] leading-relaxed text-text-primary">
+        <p className="text-[13.8px] leading-relaxed break-words text-text-primary">
           <span className="mr-1.5 font-mono font-semibold">{post.handle}</span>
           {post.caption}
         </p>
       )}
 
-      {post.commentCount > 0 && (
-        <Link href={`/post/${post.id}`} className="text-[13px] text-text-faint hover:text-text-secondary">
+      {showCommentsLink && post.commentCount > 0 && (
+        <Link
+          href={`/post/${post.id}`}
+          className="w-fit text-[13px] text-text-faint transition-colors duration-[var(--dur-fast)] ease-out hover:text-text-primary"
+        >
           {strings.postCard.viewComments(post.commentCount)}
         </Link>
       )}
 
-      <div className="text-[11px] tracking-wide text-text-faint uppercase">{timeAgo(post.createdAt)}</div>
-
-      {reporting && (
-        <form onSubmit={onSubmitReport} className="flex flex-col gap-2 rounded-lg border border-border p-3">
-          <label htmlFor={`report-${post.id}`} className="text-xs font-medium text-text-primary">
-            {strings.postCard.reportPrompt}
-          </label>
-          <textarea
+      <Sheet
+        open={reporting}
+        onClose={() => {
+          setReporting(false);
+          setReportReason("");
+        }}
+        title={strings.postCard.reportTitle}
+        returnFocusRef={moreButtonRef}
+      >
+        <form id={`report-form-${post.id}`} onSubmit={onSubmitReport} className="pb-2">
+          <TextArea
             id={`report-${post.id}`}
+            label={strings.postCard.reportPrompt}
+            placeholder={strings.postCard.reportPlaceholder}
             value={reportReason}
             onChange={(e) => setReportReason(e.target.value)}
-            placeholder={strings.postCard.reportPlaceholder}
-            rows={2}
+            rows={3}
             maxLength={500}
+            showCounter
             autoFocus
-            className="rounded-lg border border-border bg-bg-base px-3 py-2 text-sm text-text-primary outline-none focus-visible:border-accent-primary"
           />
-          <div className="flex gap-2">
-            <Button type="submit" disabled={!reportReason.trim()}>
-              {strings.postCard.reportSubmit}
-            </Button>
+          <div className="mt-4 flex justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -269,23 +304,23 @@ export function PostCard({
             >
               {strings.common.cancel}
             </Button>
+            <Button type="submit" disabled={!reportReason.trim()} loading={reportBusy}>
+              {strings.postCard.reportSubmit}
+            </Button>
           </div>
         </form>
-      )}
+      </Sheet>
 
-      {confirmingBlock && (
-        <div className="flex flex-col gap-2 rounded-lg border border-accent-danger p-3">
-          <p className="text-sm text-text-primary">{strings.postCard.blockConfirm(post.handle)}</p>
-          <div className="flex gap-2">
-            <Button variant="danger" onClick={onConfirmBlock}>
-              {strings.postCard.blockConfirmYes}
-            </Button>
-            <Button variant="ghost" onClick={() => setConfirmingBlock(false)}>
-              {strings.common.cancel}
-            </Button>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmingBlock}
+        onClose={() => setConfirmingBlock(false)}
+        onConfirm={onConfirmBlock}
+        title={strings.postCard.blockConfirmTitle}
+        description={strings.postCard.blockConfirm(post.handle)}
+        confirmLabel={strings.postCard.blockConfirmYes}
+        destructive
+        returnFocusRef={moreButtonRef}
+      />
     </article>
   );
 }

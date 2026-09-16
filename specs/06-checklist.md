@@ -138,6 +138,27 @@ convention used in matri's `REFERENCE/updated-checklist.md`).
   actionable" feedback (new `ToastContext` + inline confirm/reason forms in `PostCard.tsx` and
   `/appeals`)
 - ✅ `prefers-reduced-motion` support — already implemented in `globals.css`, confirmed complete
+- ✅ Full UI/UX redesign pass across every screen and component, brand palette unchanged —
+  rebuilt `globals.css` as a token system (radii, two-part elevation, motion, named animations,
+  shimmer, staggered list entrance) and added the primitive set the screens are now assembled from:
+  `Sheet` (bottom sheet under 640px / dialog above, focus trap + scroll lock + focus restore),
+  `ConfirmDialog`, `Menu`, `Skeleton`, `EmptyState`, `SegmentedTabs`, `ListRow`/`ListGroup`,
+  `PageHeader`, `Avatar`, `IconButton` (aria-label required by its type), `Spinner`, `PostImage`,
+  `AuthLayout`. Every screen gained skeleton loading, designed empty/error states and per-action
+  progress; the profile screen's stack of identical buttons became grouped setting rows; compose
+  gained a local-only photo preview (object URL, never uploaded) and an indeterminate cartoonize
+  bar; the like button became optimistic with rollback. `ThemeToggle` existed but was rendered
+  nowhere - it is now mounted in the desktop rail and the mobile top bar, as this doc always
+  specified. No route, API call, permission check or validation changed; `lib/api.ts` and
+  `AuthContext.tsx` were not touched. Four real defects found and fixed in the pass: `Sheet` and
+  `ConfirmDialog` returned focus to `<body>` when the control that opened them was a menu item that
+  had since unmounted; initial focus landed on the close button instead of the field (React never
+  renders an `autofocus` attribute, so the control is marked explicitly); `prefers-reduced-motion`
+  collapsed animation duration but not delay, leaving staggered list items stuck at opacity 0; and
+  the block confirmation never closed on success, which on the post detail screen left a modal over
+  the page. `npm run lint` is now clean, having had pre-existing `react-hooks/set-state-in-effect`
+  errors on the feed and moderation screens - both resolved by keying the list on its tab so a
+  switch remounts with fresh state instead of clearing it from an effect
 - ✅ i18n string externalization even for single-locale launch (F7.2) — `frontend/src/lib/strings.ts`,
   all screens now read their copy from it instead of inline literals
 

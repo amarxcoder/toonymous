@@ -3,21 +3,32 @@
 import { FormEvent, useEffect, useState } from "react";
 import { ApiError, blockHandle, getBlockedHandles, unblockHandle } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
+import { useToast } from "@/lib/ToastContext";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/Button";
+import { EmptyState } from "@/components/EmptyState";
+import { LockIcon } from "@/components/Icons";
+import { PageHeader } from "@/components/PageHeader";
+import { RowSkeleton } from "@/components/Skeleton";
+import { InlineInput } from "@/components/TextField";
 
 export default function BlockedPage() {
   const { accessToken } = useAuth();
+  const { showToast } = useToast();
   const [handles, setHandles] = useState<string[]>([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Tracks which row is mid-unblock so only that row shows a spinner.
+  const [unblocking, setUnblocking] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
     getBlockedHandles(accessToken)
       .then((r) => setHandles(r.handles))
-      .catch((err) => setError(err instanceof ApiError ? err.message : strings.blocked.loadError));
+      .catch((err) => setError(err instanceof ApiError ? err.message : strings.blocked.loadError))
+      .finally(() => setLoading(false));
   }, [accessToken]);
 
   async function onBlock(e: FormEvent) {
@@ -29,8 +40,11 @@ export default function BlockedPage() {
       await blockHandle(accessToken, input.trim());
       setHandles((prev) => [input.trim(), ...prev]);
       setInput("");
+      showToast(strings.blocked.blockedToast, "success");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : strings.blocked.blockError);
+      const message = err instanceof ApiError ? err.message : strings.blocked.blockError;
+      setError(message);
+      showToast(message, "error");
     } finally {
       setBusy(false);
     }
@@ -38,55 +52,86 @@ export default function BlockedPage() {
 
   async function onUnblock(handle: string) {
     if (!accessToken) return;
+    setUnblocking(handle);
     try {
       await unblockHandle(accessToken, handle);
       setHandles((prev) => prev.filter((h) => h !== handle));
+      showToast(strings.blocked.unblockedToast, "success");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : strings.blocked.unblockError);
+      const message = err instanceof ApiError ? err.message : strings.blocked.unblockError;
+      setError(message);
+      showToast(message, "error");
+    } finally {
+      setUnblocking(null);
     }
   }
 
   if (!accessToken) {
     return (
-      <main className="mx-auto flex w-full max-w-sm flex-1 items-center justify-center px-4 py-16">
-        <p className="text-sm text-text-secondary">{strings.blocked.loginPrompt}</p>
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8">
+        <PageHeader title={strings.blocked.title} back />
+        <EmptyState
+          icon={<LockIcon className="h-6 w-6" />}
+          title={strings.blocked.loginPrompt}
+        />
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6 px-4 py-16">
-      <h1 className="text-2xl font-semibold">{strings.blocked.title}</h1>
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-8">
+      <PageHeader title={strings.blocked.title} subtitle={strings.blocked.subtitle} back />
+
       <form onSubmit={onBlock} className="flex gap-2">
-        <input
+        <InlineInput
+          label={strings.blocked.inputLabel}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={strings.blocked.inputPlaceholder}
-          className="flex-1 rounded-lg border border-border bg-bg-surface px-3 py-2 text-sm text-text-primary outline-none focus-visible:border-accent-primary"
+          className="font-mono"
         />
-        <Button type="submit" disabled={busy || !input.trim()}>
+        <Button type="submit" disabled={!input.trim()} loading={busy}>
           {strings.blocked.block}
         </Button>
       </form>
 
-      {error && <p className="text-sm text-accent-danger">{error}</p>}
+      {error && (
+        <p role="alert" className="text-[13px] text-accent-danger">
+          {error}
+        </p>
+      )}
 
-      <div className="flex flex-col gap-2">
-        {handles.map((h) => (
-          <div
-            key={h}
-            className="flex items-center justify-between rounded-lg border border-border p-3"
-          >
-            <span className="text-sm">{h}</span>
-            <Button variant="ghost" onClick={() => onUnblock(h)}>
-              {strings.blocked.unblock}
-            </Button>
-          </div>
-        ))}
-        {handles.length === 0 && (
-          <p className="py-6 text-center text-sm text-text-secondary">{strings.blocked.empty}</p>
-        )}
-      </div>
+      {loading ? (
+        <div className="flex flex-col gap-2" aria-busy="true" aria-label={strings.common.loading}>
+          <RowSkeleton />
+          <RowSkeleton />
+        </div>
+      ) : handles.length > 0 ? (
+        <ul className="stagger flex flex-col gap-2">
+          {handles.map((h) => (
+            <li
+              key={h}
+              className="flex items-center justify-between gap-3 rounded-md border border-border bg-bg-surface p-3 pl-4 shadow-xs"
+            >
+              <span className="truncate font-mono text-[13.5px] font-medium">{h}</span>
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={unblocking === h}
+                onClick={() => onUnblock(h)}
+              >
+                {strings.blocked.unblock}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState
+          icon={<LockIcon className="h-6 w-6" />}
+          title={strings.blocked.empty}
+          body={strings.blocked.emptyBody}
+        />
+      )}
     </main>
   );
 }

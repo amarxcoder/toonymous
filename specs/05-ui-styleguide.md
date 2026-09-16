@@ -29,7 +29,8 @@ not a color-scheme mode.
 |---|---|---|
 | `--bg-base` | `#FAFAF9` | App background |
 | `--bg-surface` | `#FFFFFF` | Cards, post containers |
-| `--bg-elevated` | `#FFFFFF` (shadow) | Modals, popovers |
+| `--bg-elevated` | `#FFFFFF` (shadow) | Modals, popovers, bottom sheets |
+| `--bg-subtle` | `#F4F4F2` | Hover/pressed wash on controls sitting on `--bg-surface`, skeleton base |
 | `--border` | `#E7E5E4` | Dividers, card borders |
 | `--text-primary` | `#18181B` | Primary text |
 | `--text-secondary` | `#6B6B70` | Timestamps, meta |
@@ -59,6 +60,22 @@ Rules:
 - Every theme's `--accent-primary-hover`/`--accent-primary-text` shade must independently pass WCAG
   AA contrast on `--bg-surface` (4.5:1 body text, 3:1 large text/icons) — adding a fifth theme means
   picking a text-safe shade of its primary hue, not reusing another theme's.
+
+## Radii, elevation & motion tokens
+
+All three are token scales in `globals.css`, exposed to Tailwind through `@theme inline` as
+`rounded-*`, `shadow-*` and `ease-*` utilities. Nothing in the UI hardcodes a radius, shadow or
+duration outside this table.
+
+| Group | Tokens | Rule |
+|---|---|---|
+| Radii | `--r-sm` 8 / `--r-md` 10 / `--r-lg` 14 / `--r-xl` 18 / `--r-2xl` 24 / `--r-pill` | `--r-md` is the default chrome radius (buttons, inputs, list rows); `--r-2xl` is cards and sheets; `--r-pill` is reserved for the primary CTA and small status pills |
+| Elevation | `--elev-xs` / `--elev-card` / `--elev-pop` / `--elev-modal` | Two-part shadows (tight contact + wide diffusion). Rises one step on hover for cards, never more. `--shadow-card` is kept as an alias of `--elev-card` |
+| Motion | `--ease-out`, `--ease-spring`, `--dur-fast` 140ms, `--dur` 200ms, `--dur-slow` 280ms | `--ease-spring` only where an element should feel physical (sheet entrance, like tap); everything else uses `--ease-out` |
+
+Named animations (`--animate-*`): `shimmer` (skeletons), `fade-in`, `rise` (list/card entrance),
+`pop-in` (dialogs, popovers), `sheet-up` (mobile bottom sheet), `spin-slow` (spinner), `like-pop`
+(heart tap), `indeterminate` (cartoonize progress bar).
 
 ## Typography
 
@@ -121,15 +138,66 @@ Rules:
   `localStorage`, applied via `data-theme` on `<html>` (set before first paint by an inline script,
   `THEME_INIT_SCRIPT` in `ThemeContext.tsx`) so there's no flash of the wrong accent. Light-only by
   design — no dark mode.
+- **Overlays:** one `Sheet` primitive backs every modal in the app - a bottom sheet under 640px
+  (thumb reach, with a grab-handle affordance) and a centered dialog above it. It traps Tab inside
+  the panel, closes on Escape or backdrop click, locks body scroll, skips its own close button when
+  placing initial focus (so a keyboard user lands in the field they came to fill), and hands focus
+  back to the control that opened it - or to an explicit `returnFocusRef` when that control was a
+  menu item that has since unmounted. `ConfirmDialog` wraps it for destructive confirmations and
+  stays open with a spinner while the action runs, so nothing can be double-submitted.
+- **Menus:** small anchored popover (`Menu`/`MenuItem`) for the post card's overflow only, closing
+  on outside pointer-down, Escape, or item choice. A two-item menu never escalates to a full modal.
+- **List rows:** grouped settings rows (`ListRow` inside `ListGroup`) with an icon, a label and a
+  one-line explanation, used for the profile screen's destinations and account actions. Preferred
+  over a stack of identical secondary buttons, which gives the eye nothing to aim at.
+- **Page headers:** `PageHeader` renders the `<h1>` (display font) plus optional subtitle, an
+  optional back control on secondary screens, and a slot for one action. The four nav destinations
+  never show a back control.
+- **Empty states:** every list renders `EmptyState` (icon, title, one explanatory line, optional
+  action) rather than a bare sentence, so an empty feed reads as intentional rather than broken.
+- **Tabs:** `SegmentedTabs` draws a single indicator that slides between options, so switching
+  reads as one control rather than two independent buttons.
 - **Toasts/inline errors:** never use a raw `alert()`; all feedback (e.g. "post scrubbed for
   personal info, please rephrase") is inline, calm, and actionable — this app will surface privacy
   filter interventions relatively often, so this messaging must feel protective, not punitive.
 
+## Loading, empty & feedback states
+
+Every asynchronous surface in the app has all four states designed, not just the happy one.
+
+- **Loading:** skeletons, never a centered "Loading..." string. A skeleton mirrors the exact shape
+  of the content it replaces (`PostCardSkeleton`, `CommentSkeleton`, `RowSkeleton`), so nothing
+  shifts when real data lands. The group is announced once via `aria-busy` on its container rather
+  than per placeholder. First load of a list shows skeletons; paging more into a list already on
+  screen shows a spinner on the button instead.
+- **Images:** a shimmer placeholder is held under every post image until it decodes, then the image
+  fades in. A post that exists before its cartoon does renders an explicit "still cartoonizing"
+  tile, not an empty gap.
+- **Progress:** work with no real percentage (the cartoonize queue) gets an indeterminate bar.
+  Never dress an unknown duration up as a fake percentage.
+- **Optimistic actions:** the like button flips on the same frame as the tap and rolls back to the
+  server's last known value if the request fails. An in-flight guard blocks a second request
+  without visually disabling the control.
+- **Toasts:** `info` / `success` / `error`, each with an icon and a dismiss control, at most three
+  on screen at once. Used for the result of an action taken elsewhere on the page (follow, block,
+  report sent). Failures a user fixes *in place* - a login error, a validation error - are reported
+  inline next to the field instead, because that is where the fix happens.
+- **Errors in a list:** a failure with nothing on screen replaces the list with an `EmptyState`
+  carrying a retry action; a failure while paging keeps what is already loaded and reports the
+  problem above the load-more control.
+
 ## Motion
 
-- Short, purposeful transitions only: 150-200ms ease-out for hovers/taps, 250ms for
-  modal/sheet open. No decorative animation that delays the user from posting or scrolling.
-- Respect `prefers-reduced-motion` — disable non-essential transitions when set.
+- Short, purposeful transitions only: `--dur-fast` for hovers/taps, `--dur` for state changes,
+  `--dur-slow` for modal/sheet open. No decorative animation that delays the user from posting or
+  scrolling.
+- Lists enter with a staggered `rise` (`.stagger`, 45ms apart, capped at 6 so a long list never
+  lags at the end). Cards lift one elevation step on hover; buttons scale to 0.98 on press.
+- Respect `prefers-reduced-motion` — when set, non-essential animation is disabled by collapsing
+  duration **and** iteration count **and** delay. All three matter: a zeroed duration alone leaves
+  an infinite animation spinning thousands of times a second, and a live delay leaves a staggered
+  item sitting at its first keyframe (opacity 0) for the length of that delay, which turns an
+  entrance into missing content.
 
 ## Iconography
 

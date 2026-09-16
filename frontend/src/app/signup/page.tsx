@@ -6,8 +6,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { ApiError } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/Button";
-import { LogoMark } from "@/components/Logo";
 import { TextField } from "@/components/TextField";
 
 export default function SignupPage() {
@@ -33,12 +33,18 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <LogoMark size={44} />
-        <h1 className="font-display text-2xl font-bold">{strings.signup.title}</h1>
-        <p className="text-sm text-text-secondary">{strings.signup.subtitle}</p>
-      </div>
+    <AuthLayout
+      title={strings.signup.title}
+      subtitle={strings.signup.subtitle}
+      footer={
+        <>
+          {strings.signup.loginPrompt}{" "}
+          <Link href="/login" className="font-semibold text-accent-primary-text hover:underline">
+            {strings.signup.loginLink}
+          </Link>
+        </>
+      }
+    >
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <TextField
           id="email"
@@ -56,20 +62,19 @@ export default function SignupPage() {
           autoComplete="new-password"
           minLength={8}
           required
+          hint={strings.signup.passwordHint}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        {error && <p className="text-sm text-accent-danger">{error}</p>}
-        <Button type="submit" disabled={submitting}>
+        {error && (
+          <p role="alert" className="text-sm text-accent-danger">
+            {error}
+          </p>
+        )}
+        <Button type="submit" size="lg" loading={submitting} className="w-full">
           {submitting ? strings.signup.submitting : strings.signup.submit}
         </Button>
       </form>
-      <p className="text-sm text-text-secondary">
-        {strings.signup.loginPrompt}{" "}
-        <Link href="/login" className="text-accent-primary-text hover:underline">
-          {strings.signup.loginLink}
-        </Link>
-      </p>
-    </main>
+    </AuthLayout>
   );
 }

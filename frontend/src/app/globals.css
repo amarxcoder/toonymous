@@ -12,6 +12,9 @@
   --bg-base: #fafaf9;
   --bg-surface: #ffffff;
   --bg-elevated: #ffffff;
+  /* Hover/pressed wash for controls sitting on --bg-surface, where
+     --bg-base is too close in value to read as a state change. */
+  --bg-subtle: #f4f4f2;
   --border: #e7e5e4;
   --border-strong: rgba(15, 17, 25, 0.14);
   --text-primary: #18181b;
@@ -29,7 +32,34 @@
   --accent-success: #16a34a;
   --accent-danger: #dc2626;
   --accent-warning: #d97706;
-  --shadow-card: 0 1px 2px rgba(10, 12, 20, 0.04), 0 12px 28px -16px rgba(10, 12, 20, 0.16);
+
+  /* Radii scale. --r-pill is reserved for the one primary CTA shape; all
+     other chrome stays at --r-md (10px) per the styleguide. */
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-2xl: 24px;
+  --r-pill: 999px;
+
+  /* Elevation. Two-part shadows (tight contact + wide diffusion) so cards
+     read as lifted without the muddy grey halo a single large blur gives. */
+  --elev-xs: 0 1px 2px rgba(10, 12, 20, 0.05);
+  --elev-card: 0 1px 2px rgba(10, 12, 20, 0.04), 0 12px 28px -16px rgba(10, 12, 20, 0.16);
+  --elev-pop: 0 2px 6px rgba(10, 12, 20, 0.06), 0 16px 32px -12px rgba(10, 12, 20, 0.22);
+  --elev-modal: 0 8px 20px rgba(10, 12, 20, 0.1), 0 32px 64px -24px rgba(10, 12, 20, 0.3);
+  /* Styleguide names this token directly, kept as the card alias. */
+  --shadow-card: var(--elev-card);
+
+  /* Motion. --ease-out is a slight overshoot-free decelerate that reads as
+     "settled" rather than linear; --ease-spring is used only where an
+     element should feel physical (sheet, like tap). Durations stay inside
+     the styleguide's 150-250ms envelope for chrome. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-fast: 140ms;
+  --dur: 200ms;
+  --dur-slow: 280ms;
 }
 
 /* Violet: indigo/pink/amber. */
@@ -66,6 +96,7 @@
   --color-bg-base: var(--bg-base);
   --color-bg-surface: var(--bg-surface);
   --color-bg-elevated: var(--bg-elevated);
+  --color-bg-subtle: var(--bg-subtle);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-text-primary: var(--text-primary);
@@ -81,6 +112,113 @@
   --color-accent-warning: var(--accent-warning);
   --font-sans: var(--font-family-sans);
   --font-display: var(--font-display);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-2xl: var(--r-2xl);
+  --radius-pill: var(--r-pill);
+
+  --shadow-xs: var(--elev-xs);
+  --shadow-card: var(--elev-card);
+  --shadow-pop: var(--elev-pop);
+  --shadow-modal: var(--elev-modal);
+
+  --ease-out: var(--ease-out);
+  --ease-spring: var(--ease-spring);
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-fade-in: fade-in var(--dur) var(--ease-out) both;
+  --animate-rise: rise var(--dur-slow) var(--ease-out) both;
+  --animate-pop-in: pop-in var(--dur) var(--ease-spring) both;
+  --animate-sheet-up: sheet-up var(--dur-slow) var(--ease-out) both;
+  --animate-spin-slow: spin 700ms linear infinite;
+  --animate-like-pop: like-pop 320ms var(--ease-spring);
+  --animate-indeterminate: indeterminate 1.4s var(--ease-out) infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -180% 0;
+  }
+  to {
+    background-position: 180% 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Lists and cards enter with a short upward drift - enough to read as
+   "this arrived", short enough not to delay scrolling (styleguide/Motion). */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes like-pop {
+  40% {
+    transform: scale(1.28);
+  }
+  70% {
+    transform: scale(0.94);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Indeterminate bar for work with no real percentage to report (the
+   cartoonize queue) - never dressed up as a fake percentage. */
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.35);
+  }
+  50% {
+    transform: translateX(20%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(120%) scaleX(0.35);
+  }
 }
 
 body {
@@ -94,6 +232,19 @@ body {
     "Segoe UI",
     Roboto,
     sans-serif;
+  /* Keeps the page from shifting sideways when a modal locks scrolling. */
+  scrollbar-gutter: stable;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent-primary) 22%, transparent);
+  color: var(--text-primary);
 }
 
 /* Brand gradient - the one place the three accents mix together, reused for
@@ -108,10 +259,58 @@ body {
   );
 }
 
+/* Skeleton placeholder: a neutral block that sweeps a highlight across
+   itself while real content loads. Sized by the element it replaces, so a
+   loading screen has the same layout as the loaded one and nothing jumps. */
+.skeleton {
+  background-color: var(--bg-subtle);
+  background-image: linear-gradient(
+    90deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 80%
+  );
+  background-size: 180% 100%;
+  background-repeat: no-repeat;
+  animation: var(--animate-shimmer);
+}
+
+/* Staggered list entrance: each child starts fractionally after the one
+   above it, so a feed page reads as settling into place rather than
+   snapping. Capped at 6 so a long list never has a visible lag at the end. */
+.stagger > * {
+  animation: var(--animate-rise);
+}
+.stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 45ms;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 90ms;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 135ms;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 180ms;
+}
+.stagger > *:nth-child(n + 6) {
+  animation-delay: 220ms;
+}
+
 :focus-visible {
   outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+/* Tap highlight on mobile is handled by each control's own active state. */
+@media (hover: none) {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -119,6 +318,14 @@ body {
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    /* Without this, an infinite animation (shimmer) would loop thousands of
+       times a second instead of stopping. */
+    animation-iteration-count: 1 !important;
+    /* And without this, a staggered list item would sit at its first
+       keyframe - opacity 0 - for the whole of its delay, so reduced motion
+       would turn an entrance into content that is briefly missing. */
+    animation-delay: 0ms !important;
     transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

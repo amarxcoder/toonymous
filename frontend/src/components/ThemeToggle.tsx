@@ -13,27 +13,36 @@ const SWATCH: Record<Theme, { gradient: string; label: string }> = {
   mint: { gradient: "linear-gradient(135deg, #06d6a0, #ffd60a 60%, #118ab2)", label: "Mint" },
 };
 
-export function ThemeToggle() {
+export function ThemeToggle({ className = "" }: { className?: string }) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="flex w-fit items-center gap-1.5 rounded-full border border-border bg-bg-surface p-1">
-      {THEMES.map((t) => (
-        <button
-          key={t}
-          type="button"
-          onClick={() => setTheme(t)}
-          aria-label={`${SWATCH[t].label} theme`}
-          aria-pressed={theme === t}
-          className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full ring-offset-2 ring-offset-bg-surface transition-shadow"
-          style={{
-            background: SWATCH[t].gradient,
-            boxShadow: theme === t ? "0 0 0 2px var(--text-primary)" : "none",
-          }}
-        >
-          {theme === t && <CheckIcon className="h-3 w-3 text-white" />}
-        </button>
-      ))}
+    <div
+      className={`flex w-fit items-center gap-1 rounded-pill border border-border bg-bg-surface p-1 shadow-xs ${className}`}
+    >
+      {THEMES.map((t) => {
+        const selected = theme === t;
+        return (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setTheme(t)}
+            aria-label={`${SWATCH[t].label} theme`}
+            aria-pressed={selected}
+            className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-transform duration-[var(--dur-fast)] ease-out hover:scale-110 active:scale-95"
+            style={{
+              background: SWATCH[t].gradient,
+              // Ring drawn with box-shadow rather than a border so the swatch
+              // gradient keeps its full 24px circle at both states.
+              boxShadow: selected
+                ? "0 0 0 2px var(--bg-surface), 0 0 0 4px var(--text-primary)"
+                : "none",
+            }}
+          >
+            {selected && <CheckIcon className="h-3 w-3 text-white drop-shadow-sm" />}
+          </button>
+        );
+      })}
     </div>
   );
 }

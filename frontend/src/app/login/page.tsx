@@ -6,8 +6,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { ApiError } from "@/lib/api";
 import { strings } from "@/lib/strings";
+import { AuthLayout } from "@/components/AuthLayout";
 import { Button } from "@/components/Button";
-import { LogoMark } from "@/components/Logo";
 import { TextField } from "@/components/TextField";
 
 export default function LoginPage() {
@@ -33,11 +33,21 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <LogoMark size={44} />
-        <h1 className="font-display text-2xl font-bold">{strings.login.title}</h1>
-      </div>
+    <AuthLayout
+      title={strings.login.title}
+      subtitle={strings.login.subtitle}
+      footer={
+        <>
+          {strings.login.signupPrompt}{" "}
+          <Link
+            href="/signup"
+            className="font-semibold text-accent-primary-text hover:underline"
+          >
+            {strings.login.signupLink}
+          </Link>
+        </>
+      }
+    >
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <TextField
           id="email"
@@ -57,17 +67,17 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        {error && <p className="text-sm text-accent-danger">{error}</p>}
-        <Button type="submit" disabled={submitting}>
+        {/* Auth failures are reported in the form, not as a toast: the fix
+            is right here in these two fields. */}
+        {error && (
+          <p role="alert" className="text-sm text-accent-danger">
+            {error}
+          </p>
+        )}
+        <Button type="submit" size="lg" loading={submitting} className="w-full">
           {submitting ? strings.login.submitting : strings.login.submit}
         </Button>
       </form>
-      <p className="text-sm text-text-secondary">
-        {strings.login.signupPrompt}{" "}
-        <Link href="/signup" className="text-accent-primary-text hover:underline">
-          {strings.login.signupLink}
-        </Link>
-      </p>
-    </main>
+    </AuthLayout>
   );
 }
