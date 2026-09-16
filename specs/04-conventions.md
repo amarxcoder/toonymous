@@ -72,6 +72,16 @@ surgical changes, goal-driven execution) and this project's own
 
 ## Deploy
 
+Branch strategy: a `release` branch is the deploy trigger — any commit or merge into `release`
+kicks off the deploy (Render/Vercel are configured in their dashboards to auto-deploy from
+`release`, not `main`). Push feature work to `release` (or merge into it) to ship; don't push
+straight to `main` to deploy.
+
+A push to `release` also merges it back into `main` automatically, via
+[.github/workflows/release-merge.yml](../.github/workflows/release-merge.yml). This fires right
+after the push (it doesn't wait for Render/Vercel to confirm the deploy actually succeeded), so a
+push to `release` should be treated as "about to deploy," not "confirmed live."
+
 Follows the workspace's standard pipeline (root CLAUDE.md "Deploy pipeline" section): bare VPS, PM2
 per process, nginx in front, no Docker, deploy scripts must source nvm before running node/npm.
 Given the memory-constrained production box note in root CLAUDE.md, keep the Node services on the
