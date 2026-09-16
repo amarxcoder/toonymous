@@ -58,8 +58,17 @@ convention used in matri's `REFERENCE/updated-checklist.md`).
   sharp filter). No style falls back to `CARTOONIZE_PROVIDER`. AnimeGANv2 Hayao/Paprika/Shinkai
   ONNX exports were tried and look better on scenes, but upstream license is non-commercial only,
   so not added.
-- ✅ Original image guaranteed-deletion step (F1.3) — worker deletes the intake file in a `finally`
-  block on both success and failure; safety-check-blocked images never touch disk at all
+- ✅ Original image guaranteed-deletion step (F1.3) — worker deletes the intake file on every path
+  that ends the job, success or terminal failure; the only path that skips deletion is a retry,
+  which needs the file and re-enters the same function (so the file still goes on the retry's own
+  last attempt). Safety-check-blocked images never touch disk at all
+- ✅ Cartoonize job retries (`attempts: 3`, exponential backoff from 15s, `backend/src/lib/queue.ts`)
+  — a free-tier host spins the cartoonizer down when idle and the ~15s cold start was failing posts
+  outright. `worker.ts` retries only genuine outages (5xx, 429, transport errors); a 4xx refusal
+  (unconvertible image, unknown style, bad shared secret) still fails the post on the first try.
+  The upload route also pings the cartoonizer's `/health` on arrival so it boots in parallel with
+  the rest of the upload. Worst case this extends the intake file's lifetime to the retry window,
+  which F1.3 already allows for ("fails terminally")
 - ✅ Cartoonized output → local disk → served at `/cdn/:id.jpg` (dev stand-in for S3 + real CDN per
   [04-conventions.md](04-conventions.md))
 - ✅ Client polling for "your post is ready" — compose page polls `GET /posts/:id` every 1.5s

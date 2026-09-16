@@ -9,6 +9,7 @@ import { scrubPii } from "../lib/piiFilter";
 import { postCreateLimiter } from "../lib/rateLimit";
 import { prisma } from "../lib/prisma";
 import { CARTOON_STYLES, cartoonizeQueue } from "../lib/queue";
+import { warmCartoonizer } from "../lib/cartoonizer";
 import { AuthedRequest, requireAuth } from "../lib/requireAuth";
 import { checkImageSafety } from "../lib/safetyCheck";
 import { intakePath } from "../lib/storage";
@@ -95,6 +96,10 @@ postsRouter.post(
       res.status(400).json({ error: "a jpeg, png, or webp image is required" });
       return;
     }
+
+    // Wake the cartoonizer now so it boots while the steps below run, rather
+    // than after the job reaches it (see lib/cartoonizer.ts).
+    warmCartoonizer();
 
     const captionResult = captionSchema.safeParse(req.body.caption);
     if (!captionResult.success) {

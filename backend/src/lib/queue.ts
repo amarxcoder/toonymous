@@ -19,4 +19,13 @@ export interface CartoonizeJobData {
 
 export const cartoonizeQueue = new Queue<CartoonizeJobData>("cartoonize", {
   connection: redisConnection,
+  defaultJobOptions: {
+    // The cartoonizer can be briefly unreachable without anything being
+    // wrong with the image: a free-tier host spins it down when idle and the
+    // cold start costs ~15s. Without retries a single blip fails the post
+    // permanently and the user has to upload again. worker.ts decides which
+    // failures are worth retrying; a refusal still fails on the first try.
+    attempts: 3,
+    backoff: { type: "exponential", delay: 15_000 },
+  },
 });

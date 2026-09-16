@@ -1,20 +1,35 @@
 import "dotenv/config";
 import fs from "node:fs/promises";
 import { Worker } from "bullmq";
+import { CARTOONIZER_URL, cartoonizerHeaders } from "./lib/cartoonizer";
 import { logger } from "./lib/logger";
 import { prisma } from "./lib/prisma";
 import { CartoonizeJobData, redisConnection } from "./lib/queue";
 import { deleteIfExists, intakePath, saveCartoon } from "./lib/storage";
 
-const CARTOONIZER_URL = process.env.CARTOONIZER_URL ?? "http://127.0.0.1:4002";
+// The cartoonizer turning an image down (a 4xx: unconvertible image, unknown
+// style, bad shared secret) is a verdict — retrying only earns the same
+// answer, so the post fails straight away. A 5xx, a 429 or a transport-level
+// throw means it was unreachable or overloaded, usually a free-tier cold
+// start, and deserves another attempt.
+class CartoonizerRefused extends Error {}
 
-// F1.3: the intake file is deleted here on every path (success or failure) —
-// there is no retry path that leaves an original image sitting on disk.
+function isTransient(err: unknown): boolean {
+  if (err instanceof CartoonizerRefused) return false;
+  // Intake file gone: nothing to retry with.
+  return (err as NodeJS.ErrnoException | null)?.code !== "ENOENT";
+}
+
+// F1.3: the intake file is deleted here on every path that ends the job —
+// success or terminal failure. The one path that skips deletion is a retry,
+// which needs the file to still be there and re-enters this function.
 const worker = new Worker<CartoonizeJobData>(
   "cartoonize",
   async (job) => {
     const { postId, style } = job.data;
     const inPath = intakePath(postId);
+    const attempt = job.attemptsMade + 1;
+    const lastAttempt = attempt >= (job.opts.attempts ?? 1);
 
     try {
       const original = await fs.readFile(inPath);
@@ -24,15 +39,16 @@ const worker = new Worker<CartoonizeJobData>(
         method: "POST",
         headers: {
           "Content-Type": "application/octet-stream",
-          ...(process.env.CARTOONIZER_SHARED_SECRET
-            ? { "x-internal-secret": process.env.CARTOONIZER_SHARED_SECRET }
-            : {}),
+          ...cartoonizerHeaders(),
         },
         body: original,
       });
 
       if (!response.ok) {
-        throw new Error(`cartoonizer responded ${response.status}`);
+        const message = `cartoonizer responded ${response.status}`;
+        throw response.status >= 500 || response.status === 429
+          ? new Error(message)
+          : new CartoonizerRefused(message);
       }
 
       const cartoonBuffer = Buffer.from(await response.arrayBuffer());
@@ -43,14 +59,18 @@ const worker = new Worker<CartoonizeJobData>(
         data: { status: "ready", imageUrl },
       });
     } catch (err) {
-      logger.error({ err, postId }, "cartoonize job failed");
+      if (isTransient(err) && !lastAttempt) {
+        logger.warn({ err, postId, attempt }, "cartoonize attempt failed, retrying");
+        throw err;
+      }
+      logger.error({ err, postId, attempt }, "cartoonize job failed");
       await prisma.post.update({
         where: { id: postId },
         data: { status: "failed", failureReason: "cartoonization failed" },
       });
-    } finally {
-      deleteIfExists(inPath);
     }
+
+    deleteIfExists(inPath);
   },
   { connection: redisConnection }
 );
