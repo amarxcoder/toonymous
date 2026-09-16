@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import { strings } from "@/lib/strings";
 import { Nav } from "./Nav";
 
 // Layout: bottom tab bar mobile / left rail desktop >=1024px
@@ -12,7 +13,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   if (loading || !me) {
-    return <>{children}</>;
+    return (
+      <>
+        {/* The silent refresh-cookie check this gates on is a network round
+            trip to a free-tier host that can be asleep (cold start), so
+            "loading" can run long enough to look like the nav/icons never
+            showed up rather than a brief flash. This bar is the only signal
+            of that while it lasts; it never blocks children, so a
+            logged-out visit to a marketing page (/, /login, /signup) still
+            renders instantly, unaffected. */}
+        {loading && (
+          <div
+            role="progressbar"
+            aria-label={strings.common.loading}
+            className="fixed inset-x-0 top-0 z-50 h-[2.5px] overflow-hidden bg-transparent"
+          >
+            <span className="brand-gradient block h-full w-full animate-indeterminate" />
+          </div>
+        )}
+        {children}
+      </>
+    );
   }
 
   return (
